@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template_string, send_from_directory
 import os
-#import win32api
 import pypdf
 import socket
 
@@ -10,21 +9,20 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# अब सारी सामग्री C ड्राइव के 'KioskData' फोल्डर में सेव होगी
-UPLOAD_FOLDER = r'C:\KioskData'
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
 UPI_ID = "Q508475385@ybl"
 MERCHANT_NAME = "Print Kiosk"
 
 pending_requests = []
+print_queue = []  # लोकल एजेंट के लिए प्रिंट कतार
 
-# C ड्राइव के फोल्डर से फोटो दिखाने के लिए रूट
+# फोल्डर से फाइल दिखाने के लिए रूट
+@app.route('/uploads/<path:filename>')
+def uploaded_file(filename):
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route('/kiosk-image/<path:filename>')
 def kiosk_image(filename):
-    return send_from_directory(r'C:\KioskData', filename)
+    return send_from_directory('uploads', filename)
 
 HTML_HOME = '''
 <!DOCTYPE html>
@@ -110,7 +108,7 @@ def checkout():
         if not uploaded_files or uploaded_files[0].filename == '':
             return "कोई फाइल कोनी चुणी! <a href='/'>पाछा जाओ</a>"
         
-        saved_file_paths = []
+        saved_file_filenames = []
         total_pages = 0
         is_photo_upload = False
 
@@ -118,7 +116,7 @@ def checkout():
             if file and file.filename != '':
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                 file.save(file_path)
-                saved_file_paths.append(file_path)
+                saved_file_filenames.append(file.filename)
                 
                 filename_lower = file.filename.lower()
                 if filename_lower.endswith(('.jpg', '.jpeg', '.png', '.jfif')):
@@ -131,11 +129,11 @@ def checkout():
                         total_pages += 1
 
         if print_type == 'photos' or is_photo_upload:
-            amount = len(saved_file_paths) * 10
+            amount = len(saved_file_filenames) * 10
         elif print_type == 'color':
             amount = max(1, total_pages) * 10
         elif print_type == 'aadhaar':
-            amount = len(saved_file_paths) * 10
+            amount = len(saved_file_filenames) * 10
         elif print_type == 'bw':
             if total_pages <= 3: amount = 10
             elif total_pages <= 5: amount = 20
@@ -146,7 +144,7 @@ def checkout():
 
         upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
         qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
-        paths_string = ",".join(saved_file_paths)
+        filenames_string = ",".join(saved_file_filenames)
 
         return render_template_string('''
         <!DOCTYPE html>
@@ -184,14 +182,14 @@ def checkout():
                 <img src="{{ qr_url }}" alt="UPI QR Code" style="border: 2px solid #ddd; border-radius: 8px; padding: 5px; background: white;">
                 
                 <form action="/submit-request" method="POST">
-                    <input type="hidden" name="file_paths" value="{{ paths_string }}">
+                    <input type="hidden" name="filenames" value="{{ filenames_string }}">
                     <input type="hidden" name="amount" value="{{ amount }}">
                     <button type="submit" class="btn-wait">⏳ मैं पैमेंट कर दियो है, दुकानदार ने सूचणा भेजो</button>
                 </form>
             </div>
         </body>
         </html>
-        ''', amount=amount, qr_url=qr_api_url, paths_string=paths_string)
+        ''', amount=amount, qr_url=qr_api_url, filenames_string=filenames_string)
     except Exception as e:
         return f"<h3>काई गलती है: {e}</h3><a href='/'>पाछा जाओ</a>"
 
@@ -199,11 +197,11 @@ def checkout():
 @app.route('/submit-request', methods=['POST'])
 def submit_request():
     try:
-        paths_string = request.form.get('file_paths')
+        filenames_string = request.form.get('filenames')
         amount = request.form.get('amount')
         
         req_id = len(pending_requests) + 1
-        request_data = {'id': req_id, 'paths': paths_string, 'amount': amount}
+        request_data = {'id': req_id, 'filenames': filenames_string, 'amount': amount}
         pending_requests.append(request_data)
 
         return '''
@@ -303,18 +301,26 @@ def approve_print():
         
         if 0 <= req_index < len(pending_requests):
             req = pending_requests.pop(req_index)
-            file_paths = req['paths'].split(',')
+            # कतार में जोड़ देंगे ताकि लोकल एजेंट इसे प्रिंट कर सके
+            print_queue.append(req)
             
-            printer_name = 'Brother DCP-T220'
-            for path in file_paths:
-                if os.path.exists(path):
-                    win32api.ShellExecute(0, 'print', path, f'/d:"{printer_name}"', '.', 0)
-            
-            return "<h3 style='color:green; text-align:center; margin0-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px;'>🎉 प्रिंट कमांड भेज दी है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
+            return "<h3 style='color:green; text-align:center; margin-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px;'>🎉 प्रिंट कमांड कतार में भेज दी है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
         
         return "रिक्वेस्ट पहिले ही पूरी हो चुकी है! <a href='/admin-panel'>पाछा जाओ</a>"
     except Exception as e:
         return f"<h3>प्रिंटिंग एरर: {e}</h3><a href='/admin-panel'>पाछा जाओ</a>"
+
+
+@app.route('/get-next-print', methods=['GET'])
+def get_next_print():
+    if print_queue:
+        job = print_queue.pop(0)
+        return {
+            'status': 'success',
+            'filenames': job['filenames'],
+            'amount': job['amount']
+        }
+    return {'status': 'empty'}
 
 
 if __name__ == '__main__':
