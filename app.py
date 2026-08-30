@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template_string, send_from_directory
 import os
-import win32api
+#import win32api
 import pypdf
 import socket
 
