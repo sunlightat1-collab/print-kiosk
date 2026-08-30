@@ -5,6 +5,10 @@ import pypdf
 import socket
 
 app = Flask(__name__)
+UPLOAD_FOLDER = 'uploads'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # अब सारी सामग्री C ड्राइव के 'KioskData' फोल्डर में सेव होगी
 UPLOAD_FOLDER = r'C:\KioskData'
