@@ -40,7 +40,7 @@ HTML_HOME = '''
             min-height: 100vh;
         }
         .card { 
-            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/prakash.jfif') no-repeat center center; 
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/card.jpg') no-repeat center center; 
             background-size: cover;
             max-width: 420px; 
             margin: auto; 
@@ -155,7 +155,7 @@ def checkout():
             <style>
                 body { 
                     font-family: Arial, sans-serif; 
-                    background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; 
+                    background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; 
                     background-size: cover; 
                     padding: 20px; 
                     text-align: center; 
