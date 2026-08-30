@@ -41,154 +41,75 @@ HTML_HOME = '''
             min-height: 100vh;
         }
         .container {
-            max-width: 600px;
+            max-width: 500px;
             margin: auto;
         }
-        .card { 
-            background: linear-gradient(rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.95)), url('/kiosk-image/card.jpg') no-repeat center center; 
-            background-size: cover;
-            margin: 15px auto; 
-            padding: 20px; 
-            border-radius: 10px; 
-            box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
-            text-align: left;
+        h1 {
+            color: white;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+            margin-bottom: 25px;
         }
-        input[type="text"], input[type="file"], select, button { 
-            width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: rgba(255,255,255,0.95); 
+        /* ऐप जैसे छोटे कार्ड्स की ग्रिड */
+        .app-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
         }
-        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 10px; }
-        button:hover { background-color: #218838; }
-        .note { font-size: 13px; color: #b22222; margin-top: 5px; font-weight: bold; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.4; }
-        label { font-weight: bold; color: #333; font-size: 14px; }
-        h3 { color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; }
+        .app-icon-card {
+            background: rgba(255, 255, 255, 0.95);
+            width: 130px;
+            height: 130px;
+            border-radius: 20px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.2s, background 0.2s;
+            cursor: pointer;
+            border: 2px solid #ddd;
+        }
+        .app-icon-card:hover {
+            transform: scale(1.08);
+            background: #ffffff;
+            border-color: #28a745;
+        }
+        .emoji {
+            font-size: 40px;
+            margin-bottom: 8px;
+        }
+        .title-text {
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+            padding: 0 5px;
+            color: #2c3e50;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 style="color: white; text-shadow: 2px 2px 4px rgba(0,0,0,0.7); margin-bottom: 20px;">🖨️ BHUARKARKA SERVICES 🙏</h1>
+        <h1>🖨️ BHUARKARKA SERVICES 🙏</h1>
+        <p style="color: #fff; margin-bottom: 20px; font-weight: bold;">कृपया अपनी सेवा चुनें:</p>
+        
+        <div class="app-grid">
+            <!-- 1. सेल्फ प्रिंट ऐप आइकॉन -->
+            <a href="/service/print" class="app-icon-card">
+                <div class="emoji">📄</div>
+                <div class="title-text">सेल्फ प्रिंट</div>
+            </a>
 
-        <!-- कार्ड 1: सामान्य प्रिंट सर्विस -->
-        <div class="card">
-            <h3>📄 1. सामान्य प्रिंट / डॉक्यूमेंट</h3>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="print">
-                
-                <label>👤 आवेदक का नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+            <!-- 2. पैन कार्ड आवेदन ऐप आइकॉन -->
+            <a href="/service/pan" class="app-icon-card">
+                <div class="emoji">💳</div>
+                <div class="title-text">पैन कार्ड आवेदन</div>
+            </a>
 
-                <label>📁 डॉक्यूमेंट / फोटो अपलोड करें:</label>
-                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-                
-                <label>⚙️ प्रिंट प्रकार:</label>
-                <select name="print_type">
-                    <option value="bw">ब्लैक एंड व्हाइट (सादी)</option>
-                    <option value="color">कलर प्रिंट (रंगीन)</option>
-                </select>
-
-                <button type="submit">🚀 प्रिंट के लिए पेमेंट करें</button>
-            </form>
+            <!-- अन्य भविष्य की सेवाएँ जोड़ने के लिए यहाँ और आइकॉन बनाए जा सकते हैं -->
         </div>
-
-        <!-- कार्ड 2: पैन कार्ड सर्विस -->
-        <div class="card">
-            <h3>💳 2. पैन कार्ड (PAN Card)</h3>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज:</b><br>
-                • आधार कार्ड<br>
-                • 10वीं मार्कशीट / पहचान पत्र (जिसमें जानकारी मेल खाती हो)
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="pan">
-                
-                <label>👤 आवेदक का नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-
-                <label>📁 दस्तावेज अपलोड करें:</label>
-                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-
-                <button type="submit">🚀 पैन कार्ड के लिए पेमेंट करें</button>
-            </form>
-        </div>
-
-        <!-- कार्ड 3: विवाह प्रमाण पत्र -->
-        <div class="card">
-            <h3>📜 3. विवाह प्रमाण पत्र</h3>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज:</b><br>
-                • आधार वर का + 4 पासपोर्ट फोटो<br>
-                • आधार वधू का + 4 पासपोर्ट फोटो<br>
-                • माता-पिता व गवाहों के आधार और फोटो<br>
-                • वर-वधू की संयुक्त फोटो (4x6 साइज)
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="vivah">
-                
-                <label>👤 आवेदक का नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-
-                <label>📁 सभी दस्तावेज अपलोड करें:</label>
-                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-
-                <button type="submit">🚀 विवाह प्रमाण पत्र के लिए पेमेंट करें</button>
-            </form>
-        </div>
-
-        <!-- कार्ड 4: आधार अड्रेस अपडेट -->
-        <div class="card">
-            <h3>🆔 4. आधार अड्रेस अपडेट</h3>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज:</b><br>
-                • पहचान पत्र / राशन कार्ड / जाति प्रमाण पत्र / बैंक पासबुक (जिसमें सही पता हो)
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="aadhaar_update">
-                
-                <label>👤 आवेदक का नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-
-                <label>📁 दस्तावेज अपलोड करें:</label>
-                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-
-                <button type="submit">🚀 अड्रेस अपडेट के लिए पेमेंट करें</button>
-            </form>
-        </div>
-
-        <!-- कार्ड 5: जाति एवं मूल निवास प्रमाण पत्र -->
-        <div class="card">
-            <h3>🏠 5. जाति / मूल निवास प्रमाण पत्र</h3>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज:</b><br>
-                • स्वयं व पिता का आधार, जन आधार, राशन कार्ड<br>
-                • पुराना पहचान पत्र व वोटर लिस्ट (जाति के लिए 1993/1980, मूल निवास के लिए पुराने साल)
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="jati_mool">
-                
-                <label>👤 आवेदक का नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-
-                <label>📁 दस्तावेज अपलोड करें:</label>
-                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-
-                <button type="submit">🚀 प्रमाण पत्र के लिए पेमेंट करें</button>
-            </form>
-        </div>
-
     </div>
 </body>
 </html>
@@ -199,32 +120,142 @@ def home():
     return render_template_string(HTML_HOME)
 
 
+# सेवा पेज (अलग-अलग साइड / फॉर्म खुलेंगे)
+@app.route('/service/<service_name>')
+def service_page(service_name):
+    if service_name == 'print':
+        form_html = '''
+            <h2>📄 सेल्फ प्रिंट सेवा</h2>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="print">
+                
+                <label>📁 डॉक्यूमेंट / फाइल अपलोड करें:</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
+                
+                <label>⚙️ प्रिंट प्रकार:</label>
+                <select name="print_type">
+                    <option value="bw">ब्लैक एंड व्हाइट (सादी)</option>
+                    <option value="color">कलर प्रिंट (रंगीन)</option>
+                </select>
+
+                <button type="submit">🚀 प्रिंट के लिए आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'pan':
+        form_html = '''
+            <h2>💳 पैन कार्ड आवेदन</h2>
+            <div class="note">
+                <b>📌 जरूरी दस्तावेज:</b><br>
+                1. आधार कार्ड (मुख्य पहचान)<br>
+                2. अन्य आईडी (जैसे: 10वीं मार्कशीट / वोटर आईडी / ड्राइविंग लाइसेंस आदि)
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="pan">
+                
+                <label>👤 आवेदक का पूरा नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                
+                <label>📱 मोबाइल नंबर:</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+
+                <label>📁 कॉलम 1: आधार कार्ड अपलोड करें:</label>
+                <input type="file" name="file_aadhar" accept=".pdf,.jpg,.jpeg,.jfif" required>
+
+                <label>📁 कॉलम 2: अन्य जरूरी आईडी अपलोड करें:</label>
+                <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.jfif" required>
+
+                <button type="submit">🚀 पैन कार्ड के लिए आगे बढ़ें</button>
+            </form>
+        '''
+    else:
+        return redirect(url_for('home'))
+
+    return render_template_string(f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>BHUARKARKA SERVICES</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body {{ 
+                font-family: Arial, sans-serif; 
+                background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; 
+                background-size: cover; 
+                padding: 20px; 
+                text-align: center; 
+                min-height: 100vh;
+            }}
+            .card {{ 
+                background: linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)); 
+                max-width: 450px; 
+                margin: auto; 
+                padding: 20px; 
+                border-radius: 12px; 
+                box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
+                text-align: left;
+            }
+            input[type="text"], input[type="file"], select, button {{ 
+                width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; 
+            }}
+            button {{ background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; }}
+            button:hover {{ background-color: #218838; }}
+            .note {{ font-size: 13px; color: #b22222; margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.5; }}
+            label {{ font-weight: bold; color: #333; font-size: 13px; }}
+            h2 {{ color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; }}
+            .back-link {{ display: block; text-align: center; margin-top: 15px; color: #007BFF; text-decoration: none; font-weight: bold; }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            {form_html}
+            <a href="/" class="back-link">⬅️ होम पेज पर वापस जाएं</a>
+        </div>
+    </body>
+    </html>
+    ''')
+
+
 @app.route('/checkout', methods=['POST'])
 def checkout():
     try:
-        uploaded_files = request.files.getlist('files')
         service_type = request.form.get('service_type')
-        cust_name = request.form.get('cust_name')
-        cust_mobile = request.form.get('cust_mobile')
-        print_type = request.form.get('print_type', 'bw')
-        
-        if not uploaded_files or uploaded_files[0].filename == '':
-            return "कोई फाइल कोनी चुणी! <a href='/'>पाछा जाओ</a>"
-        
         saved_file_filenames = []
-        for file in uploaded_files:
-            if file and file.filename != '':
+        
+        if service_type == 'print':
+            uploaded_files = request.files.getlist('files')
+            if not uploaded_files or uploaded_files[0].filename == '':
+                return "कोई फाइल नहीं चुनी गई! <a href='/service/print'>वापस जाएं</a>"
+            for file in uploaded_files:
+                if file and file.filename != '':
+                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                    file.save(file_path)
+                    saved_file_filenames.append(file.filename)
+            
+            cust_name = "सामान्य ग्राहक (सेल्फ प्रिंट)"
+            cust_mobile = "लागू नहीं"
+            cust_email = "लागू नहीं"
+            amount = 10 * len(saved_file_filenames)
+
+        elif service_type == 'pan':
+            cust_name = request.form.get('cust_name')
+            cust_mobile = request.form.get('cust_mobile')
+            cust_email = request.form.get('cust_email')
+            
+            file_aadhar = request.files.get('file_aadhar')
+            file_other = request.files.get('file_other')
+            
+            if not file_aadhar or file_aadhar.filename == '' or not file_other or file_other.filename == '':
+                return "कृपया दोनों दस्तावेज (आधार और अन्य आईडी) अपलोड करें! <a href='/service/pan'>वापस जाएं</a>"
+            
+            for file in [file_aadhar, file_other]:
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                 file.save(file_path)
                 saved_file_filenames.append(file.filename)
-
-        # सेवा के आधार पर फीस राशि
-        if service_type in ['vivah', 'jati_mool']:
-            amount = 50
-        elif service_type in ['pan', 'aadhaar_update']:
-            amount = 30
-        else:
-            amount = 10 * len(saved_file_filenames)
+                
+            amount = 30  # पैन कार्ड सेवा शुल्क
 
         upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
         qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
@@ -246,11 +277,11 @@ def checkout():
                     min-height: 100vh;
                 }
                 .card { 
-                    background: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)); 
+                    background: rgba(255, 255, 255, 0.95); 
                     max-width: 400px; 
                     margin: auto; 
                     padding: 20px; 
-                    border-radius: 10px; 
+                    border-radius: 12px; 
                     box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
                 }
                 .btn-wait { background-color: #ffc107; color: #333; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; width: 100%; margin-top: 15px; font-weight: bold; cursor: pointer;}
@@ -259,8 +290,13 @@ def checkout():
         <body>
             <div class="card">
                 <h2>💳 QR स्कैन करके रुपये भेजें</h2>
-                <p><b>आवेदक:</b> {{ cust_name }} ({{ cust_mobile }})</p>
-                <p><b>कुल रुपया:</b> <span style="font-size: 26px; color: #d9534f;">₹{{ amount }}</span></p>
+                <p><b>सेवा:</b> <span style="text-transform:uppercase; color:#007BFF;">{{ service_type }}</span></p>
+                {% if cust_name != "सामान्य ग्राहक (सेल्फ प्रिंट)" %}
+                <p><b>आवेदक:</b> {{ cust_name }}</p>
+                <p><b>मोबाइल:</b> {{ cust_mobile }}</p>
+                <p><b>जीमेल:</b> {{ cust_email }}</p>
+                {% endif %}
+                <p><b>कुल राशि:</b> <span style="font-size: 26px; color: #d9534f;">₹{{ amount }}</span></p>
                 
                 <img src="{{ qr_url }}" alt="UPI QR Code" style="border: 2px solid #ddd; border-radius: 8px; padding: 5px; background: white;">
                 
@@ -270,14 +306,15 @@ def checkout():
                     <input type="hidden" name="service_type" value="{{ service_type }}">
                     <input type="hidden" name="cust_name" value="{{ cust_name }}">
                     <input type="hidden" name="cust_mobile" value="{{ cust_mobile }}">
+                    <input type="hidden" name="cust_email" value="{{ cust_email }}">
                     <button type="submit" class="btn-wait">⏳ मैंने पेमेंट कर दिया है, सूचना भेजें</button>
                 </form>
             </div>
         </body>
         </html>
-        ''', amount=amount, qr_url=qr_api_url, filenames_string=filenames_string, service_type=service_type, cust_name=cust_name, cust_mobile=cust_mobile)
+        ''', amount=amount, qr_url=qr_api_url, filenames_string=filenames_string, service_type=service_type, cust_name=cust_name, cust_mobile=cust_mobile, cust_email=cust_email)
     except Exception as e:
-        return f"<h3>काई गलती है: {e}</h3><a href='/'>पाछा जाओ</a>"
+        return f"<h3>त्रुटि: {e}</h3><a href='/'>होम पेज जाएं</a>"
 
 
 @app.route('/submit-request', methods=['POST'])
@@ -288,6 +325,7 @@ def submit_request():
         service_type = request.form.get('service_type')
         cust_name = request.form.get('cust_name')
         cust_mobile = request.form.get('cust_mobile')
+        cust_email = request.form.get('cust_email')
         
         req_id = len(pending_requests) + 1
         request_data = {
@@ -296,19 +334,20 @@ def submit_request():
             'amount': amount,
             'service_type': service_type,
             'cust_name': cust_name,
-            'cust_mobile': cust_mobile
+            'cust_mobile': cust_mobile,
+            'cust_email': cust_email
         }
         pending_requests.append(request_data)
 
         return '''
-            <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.9); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
-                <h2 style="color:#d9534f;">⏳ पेमेंट की सूचना दुकानदार को पहुँच गई है!</h2>
-                <p style="font-size:18px;">आपकी रिक्वेस्ट एडमिन पैनल पर भेज दी गई है। काम जल्दी शुरू होगा...</p>
+            <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.95); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+                <h2 style="color:#d9534f;">⏳ पैमेंट की सूचना दुकानदार को पहुँच गई है!</h2>
+                <p style="font-size:18px;">आपकी रिक्वेस्ट एडमिन पैनल पर भेज दी गई है। काम जल्दी ही शुरू किया जाएगा...</p>
                 <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">होम पेज पर वापस जाएं</a>
             </div>
         '''
     except Exception as e:
-        return f"<h3>एरर: {e}</h3><a href='/'>पाछा जाओ</a>"
+        return f"<h3>एरर: {e}</h3><a href='/'>वापस जाएं</a>"
 
 
 @app.route('/admin-login', methods=['GET', 'POST'])
@@ -361,18 +400,26 @@ def admin_panel():
             cards_html = "<p style='color: #ddd;'>अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</p>"
         else:
             for idx, req in enumerate(pending_requests):
-                # एकाधिक फाइलों के लिए डाउनलोड लिंक तैयार करना
+                # फाइलों के डाउनलोड लिंक बनाना
                 files_list = req['filenames'].split(',')
                 download_links = ""
-                for f in files_list:
-                    download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:10px; text-decoration:underline;">📥 {f.strip()} डाउनलोड करें</a><br>'
+                for i, f in enumerate(files_list, 1):
+                    download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:10px; text-decoration:underline;">📥 फाइल {i} डाउनलोड करें</a><br>'
 
-                cards_html += f'''
-                    <div style="background: rgba(0, 0, 0, 0.85); padding: 15px; margin: 15px auto; max-width: 450px; border-radius: 8px; border-left: 5px solid #28a745; text-align: left;">
-                        <p><b>रिक्वेस्ट नंबर:</b> #{req['id']}</p>
+                # अगर पैन कार्ड है तो नाम/मोबाइल दिखेगा, प्रिंट वाले में हाइड या नॉर्मल दिखेगा
+                cust_info_block = ""
+                if req['service_type'] == 'pan':
+                    cust_info_block = f'''
                         <p><b>आवेदक का नाम:</b> <span style="color:#00e676; font-size:17px;">{req['cust_name']}</span></p>
                         <p><b>मोबाइल नंबर:</b> <span style="color:#ffeb3b;">{req['cust_mobile']}</span></p>
-                        <p><b>सेवा का नाम:</b> <span style="color:#ff9800; text-transform:uppercase;">{req['service_type']}</span></p>
+                        <p><b>जीमेल:</b> <span style="color:#ff9800;">{req['cust_email']}</span></p>
+                    '''
+
+                cards_html += f'''
+                    <div style="background: rgba(0, 0, 0, 0.85); padding: 15px; margin: 15px auto; max-width: 450px; border-radius: 10px; border-left: 5px solid #28a745; text-align: left;">
+                        <p><b>रिक्वेस्ट नंबर:</b> #{req['id']}</p>
+                        <p><b>सेवा प्रकार:</b> <span style="color:#ffeb3b; text-transform:uppercase; font-weight:bold;">{req['service_type']}</span></p>
+                        {cust_info_block}
                         <p><b>रुपया प्राप्त:</b> <span style="color:#4cd137;">₹{req['amount']}</span></p>
                         <p><b>दस्तावेज़ फाइलें:</b><br>{download_links}</p>
                         <form action="/approve-print" method="POST">
