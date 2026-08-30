@@ -48,8 +48,39 @@ HTML_HOME = '''
             font-family: 'Britannic Bold', Arial, sans-serif;
             color: white;
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             letter-spacing: 1px;
+        }
+        /* दुकान स्टेटस बेज (Status Badge) */
+        .shop-status {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.75);
+            padding: 8px 16px;
+            border-radius: 30px;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            font-family: 'Britannic Bold', Arial, sans-serif;
+            letter-spacing: 0.5px;
+        }
+        .status-dot {
+            height: 12px;
+            width: 12px;
+            background-color: #28a745;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            box-shadow: 0 0 8px #28a745;
+            animation: pulse 1.5s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
         }
         .app-grid {
             display: flex;
@@ -95,6 +126,12 @@ HTML_HOME = '''
 <body>
     <div class="container">
         <h1>🖨️ BHUARKARKA SERVICES 🙏</h1>
+        
+        <!-- लाइव दुकान स्टेटस आइकॉन -->
+        <div class="shop-status">
+            <span class="status-dot"></span> दुकान खुली है (ONLINE)
+        </div>
+
         <p style="color: #fff; margin-bottom: 20px; font-weight: bold;">कृपया अपनी सेवा चुनें:</p>
         
         <div class="app-grid">
