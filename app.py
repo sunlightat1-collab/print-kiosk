@@ -41,7 +41,7 @@ HTML_HOME = '''
             min-height: 100vh;
         }
         .container {
-            max-width: 500px;
+            max-width: 600px;
             margin: auto;
         }
         h1 {
@@ -55,7 +55,7 @@ HTML_HOME = '''
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 20px;
+            gap: 15px;
         }
         .app-icon-card {
             background: rgba(255, 255, 255, 0.95);
@@ -79,12 +79,12 @@ HTML_HOME = '''
             border-color: #28a745;
         }
         .emoji {
-            font-size: 40px;
-            margin-bottom: 8px;
+            font-size: 35px;
+            margin-bottom: 6px;
         }
         .title-text {
             font-family: 'Britannic Bold', Arial, sans-serif;
-            font-size: 14px;
+            font-size: 12px;
             text-align: center;
             padding: 0 5px;
             color: #2c3e50;
@@ -112,6 +112,21 @@ HTML_HOME = '''
                 <div class="emoji">🌽</div>
                 <div class="title-text">FARMER ID</div>
             </a>
+
+            <a href="/service/shramik" class="app-icon-card">
+                <div class="emoji">👷</div>
+                <div class="title-text">SHRAMIK CARD</div>
+            </a>
+
+            <a href="/service/jan_aadhaar" class="app-icon-card">
+                <div class="emoji">🆔</div>
+                <div class="title-text">JAN AADHAAR</div>
+            </a>
+
+            <a href="/service/ayushman" class="app-icon-card">
+                <div class="emoji">🏥</div>
+                <div class="title-text">AYUSHMAN CARD</div>
+            </a>
         </div>
     </div>
 </body>
@@ -130,16 +145,13 @@ def service_page(service_name):
             <h2>📄 SELF PRINT SERVICE</h2>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="print">
-                
                 <label>📁 डॉक्यूमेंट / फाइल अपलोड करें:</label>
                 <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-                
                 <label>⚙️ प्रिंट प्रकार:</label>
                 <select name="print_type">
                     <option value="bw">ब्लैक एंड व्हाइट (सादी)</option>
                     <option value="color">कलर प्रिंट (रंगीन)</option>
                 </select>
-
                 <button type="submit">🚀 प्रिंट के लिए आगे बढ़ें</button>
             </form>
         '''
@@ -154,29 +166,22 @@ def service_page(service_name):
             </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="pan">
-                
                 <label>👤 आवेदक का पूरा नाम (आधार के अनुसार):</label>
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                
                 <label>📱 मोबाइल नंबर:</label>
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-
                 <label>📁 कॉलम 1: आधार कार्ड अपलोड करें:</label>
                 <input type="file" name="file_aadhar" accept=".pdf,.jpg,.jpeg,.jfif" required>
-
                 <label>📁 कॉलम 2: अन्य जरूरी आईडी अपलोड करें:</label>
                 <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.jfif" required>
-
                 <div style="margin: 12px 0; font-size: 13px; text-align: left;">
                     <input type="checkbox" id="rule_check" required style="width: auto; margin-right: 8px;">
                     <label for="rule_check" style="font-weight: normal; color: #333;">
                         मैं पुष्टि करता/करती हूँ कि मेरे अन्य दस्तावेज में दर्ज जानकारी आधार कार्ड के अनुसार ही है।
                     </label>
                 </div>
-
                 <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
             </form>
         '''
@@ -194,26 +199,98 @@ def service_page(service_name):
             </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="farmer">
-                
                 <label>👤 किसान का पूरा नाम:</label>
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                
                 <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-
-                <label>📁 ब्राउज़र विकल्प 1 (आधार कार्ड):</label>
+                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-
-                <label>📁 ब्राउज़र विकल्प 2 (जमाबंदी):</label>
+                <label>📁 दस्तावेज़ 2 (जमाबंदी):</label>
                 <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-
-                <label>📁 ब्राउज़र विकल्प 3 (जन आधार):</label>
+                <label>📁 दस्तावेज़ 3 (जन आधार):</label>
                 <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-
                 <button type="submit">🚀 FARMER ID के लिए आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'shramik':
+        form_html = '''
+            <h2>👷 SHRAMIK CARD (ई-श्रम)</h2>
+            <div class="note">
+                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
+                1. आधार कार्ड<br>
+                2. बैंक पासबुक (खाता विवरण)<br>
+                3. मोबाइल नंबर (आधार से लिंक, जिसपर OTP आएगा)<br>
+                <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
+                <span style="font-size: 12px; color: #0056b3;">📞 अपनी रिक्वेस्ट की पुष्टि के लिए व्हाट्सएप नंबर <b>7610967507</b> पर कॉल या व्हाट्सएप मैसेज करें। 🙌</span>
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="shramik">
+                <label>👤 श्रमिक का पूरा नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
+                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 दस्तावेज़ 2 (बैंक पासबुक):</label>
+                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <button type="submit">🚀 SHRAMIK CARD के लिए आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'jan_aadhaar':
+        form_html = '''
+            <h2>🆔 JAN AADHAAR CARD</h2>
+            <div class="note">
+                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
+                1. पुराना जन आधार या रसीद संख्या<br>
+                2. परिवार के सभी सदस्यों के आधार कार्ड<br>
+                3. मुखिया का बैंक खाता विवरण<br>
+                4. Otp आधार / जन आधार रजिस्टर्ड मोबाइल पर<br>
+                <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
+                <span style="font-size: 12px; color: #0056b3;">📞 अपनी रिक्वेस्ट की पुष्टि के लिए व्हाट्सएप नंबर <b>7610967507</b> पर कॉल या व्हाट्सएप मैसेज करें। 🙌</span>
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="jan_aadhaar">
+                <label>👤 मुखिया / आवेदक का नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                <label>📱 मोबाइल नंबर:</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+                <label>📁 दस्तावेज़ 1 (आधार कार्ड / मुख्य दस्तावेज):</label>
+                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 दस्तावेज़ 2 (अन्य सहायक दस्तावेज/रसीद):</label>
+                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <button type="submit">🚀 JAN AADHAAR के लिए आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'ayushman':
+        form_html = '''
+            <h2>🏥 AYUSHMAN CARD (स्वास्थ्य कार्ड)</h2>
+            <div class="note">
+                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
+                1. आधार कार्ड<br>
+                2. राशन कार्ड या समग्र परिवार सूची का नाम<br>
+                3. Otp आधार कार्ड में दर्ज मोबाइल नंबर पर<br>
+                <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
+                <span style="font-size: 12px; color: #0056b3;">📞 अपनी रिक्वेस्ट की पुष्टि के लिए व्हाट्सएप नंबर <b>7610967507</b> पर कॉल या व्हाट्सएप मैसेज करें। 🙌</span>
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="ayushman">
+                <label>👤 लाभार्थी का पूरा नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
+                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 दस्तावेज़ 2 (राशन कार्ड / सूची पर्ची):</label>
+                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <button type="submit">🚀 AYUSHMAN CARD के लिए आगे बढ़ें</button>
             </form>
         '''
     else:
@@ -303,7 +380,7 @@ def checkout():
                 
             amount = 200
 
-        elif service_type == 'farmer':
+        elif service_type in ['farmer', 'jan_aadhaar']:
             cust_name = request.form.get('cust_name')
             cust_mobile = request.form.get('cust_mobile')
             cust_email = request.form.get('cust_email')
@@ -312,15 +389,37 @@ def checkout():
             file_col2 = request.files.get('file_col2')
             file_col3 = request.files.get('file_col3')
             
-            if not file_col1 or file_col1.filename == '' or not file_col2 or file_col2.filename == '' or not file_col3 or file_col3.filename == '':
-                return "कृपया तीनों ब्राउज़र विकल्प के दस्तावेज अपलोड करें! <a href='/service/farmer'>वापस जाएं</a>"
+            if not file_col1 or file_col1.filename == '' or not file_col2 or file_col2.filename == '' or (service_type == 'farmer' and (not file_col3 or file_col3.filename == '')):
+                return "कृपया सभी आवश्यक दस्तावेज अपलोड करें! <a href='/service/" + service_type + "'>वापस जाएं</a>"
             
-            for file in [file_col1, file_col2, file_col3]:
+            files_to_save = [file_col1, file_col2]
+            if file_col3 and file_col3.filename != '':
+                files_to_save.append(file_col3)
+                
+            for file in files_to_save:
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                 file.save(file_path)
                 saved_file_filenames.append(file.filename)
                 
             amount = 50
+
+        elif service_type in ['shramik', 'ayushman']:
+            cust_name = request.form.get('cust_name')
+            cust_mobile = request.form.get('cust_mobile')
+            cust_email = request.form.get('cust_email')
+            
+            file_col1 = request.files.get('file_col1')
+            file_col2 = request.files.get('file_col2')
+            
+            if not file_col1 or file_col1.filename == '' or not file_col2 or file_col2.filename == '':
+                return "कृपया दोनों दस्तावेज अपलोड करें! <a href='/service/" + service_type + "'>वापस जाएं</a>"
+            
+            for file in [file_col1, file_col2]:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                file.save(file_path)
+                saved_file_filenames.append(file.filename)
+                
+            amount = 40
 
         upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
         qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
@@ -473,7 +572,7 @@ def admin_panel():
                     download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:8px; text-decoration:underline; font-size:13px;">📥 फाइल {i}</a><br>'
 
                 cust_info_block = ""
-                if req['service_type'] in ['pan', 'farmer']:
+                if req['service_type'] != 'print':
                     cust_info_block = f'''
                         <p style="margin: 5px 0;"><b>आवेदक:</b> <span style="color:#00e676;">{req['cust_name']}</span></p>
                         <p style="margin: 5px 0;"><b>मोबाइल:</b> <span style="color:#ffeb3b;">{req['cust_mobile']}</span></p>
@@ -500,7 +599,7 @@ def admin_panel():
         <head>
             <title>BHUARKARKA - एडमिन पैनल</title>
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <meta http-style refresh content="3">
+            <meta http-equiv="refresh" content="3">
             <style>
                 body { 
                     font-family: Arial, sans-serif; 
