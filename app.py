@@ -325,5 +325,37 @@ if __name__ == '__main__':
     local_ip = socket.gethostbyname(hostname)
     print(f"\n👉 ग्राहक लिंक: http://{local_ip}:5000")
     print(f"👉 मोबाइल एडमिन पैनल लिंक: http://{local_ip}:5000/admin-panel\n")
+
+from flask import Flask, render_template, request, redirect, session, url_for
+
+# (बाकी पुराना कोड वैसा ही रहेगा...)
+
+# 1. एडमिन लॉगिन पेज
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        # यहाँ अपना मनपसंद पासवर्ड रख लें (जैसे '1234' या दुकान का नाम)
+        if password == '1234': 
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_panel'))
+        else:
+            return render_template('admin_login.html', error="गलत पासवर्ड! दोबारा कोशिश करें।")
+    return '''
+        <form method="POST" style="text-align:center; margin-top:100px; font-family:sans-serif;">
+            <h2>🔐 दुकानदार लॉगिन</h2>
+            <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" style="padding:10px; font-size:16px;" required>
+            <br><br>
+            <button type="submit" style="padding:10px 20px; background:green; color:white; border:none; font-size:16px; cursor:pointer;">लॉगिन करें</button>
+        </form>
+    '''
+
+# 2. मुख्य एडमिन पैनल (अब इस पर ताला लग चुका है)
+@app.route('/admin-panel')
+def admin_panel():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    
+    # (आपका पुराना एडमिन पैनल का बाकी कोड यहाँ आ जाएगा...)
     
     app.run(host='0.0.0.0', port=5000)
