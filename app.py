@@ -1,6 +1,5 @@
 from flask import Flask, request, render_template_string, send_from_directory, redirect, url_for, session
 import os
-import pypdf
 import socket
 
 app = Flask(__name__)
@@ -19,6 +18,9 @@ print_queue = []
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
+    # यदि फाइल PDF है तो वह सीधे डाउनलोड होगी, बाकी फाइलें ब्राउज़र में खुलेंगी
+    if filename.lower().endswith('.pdf'):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 @app.route('/kiosk-image/<path:filename>')
@@ -51,7 +53,6 @@ HTML_HOME = '''
             margin-bottom: 15px;
             letter-spacing: 1px;
         }
-        /* दुकान स्टेटस बेज (Status Badge) */
         .shop-status {
             display: inline-flex;
             align-items: center;
@@ -127,7 +128,6 @@ HTML_HOME = '''
     <div class="container">
         <h1>🖨️ BHUARKARKA SERVICES 🙏</h1>
         
-        <!-- लाइव दुकान स्टेटस आइकॉन -->
         <div class="shop-status">
             <span class="status-dot"></span> दुकान खुली है (ONLINE)
         </div>
@@ -267,7 +267,7 @@ def service_page(service_name):
                 3. पिता का पहचान पत्र / वोटर लिस्ट (2008, 2013, 2017, 2026 आदि)<br>
                 4. नीचे दिए गए लिंक से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर **2 उत्तरदायी गवाहों से रिपोर्ट (सत्यापन)** करवाकर अपलोड करें।<br>
                 <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
-                    📥 <a href="/uploads/Bonafide-1.pdf" download style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
+                    📥 <a href="/uploads/Bonafide-1.pdf" style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
                 </div>
                 <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
                 <span style="font-size: 12px; color: #0056b3;">📞 सहायता के लिए व्हाट्सएप नंबर <b>7610967507</b> पर संपर्क करें। 🙌</span>
@@ -715,7 +715,7 @@ def admin_panel():
                 files_list = req['filenames'].split(',')
                 download_links = ""
                 for i, f in enumerate(files_list, 1):
-                    download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:8px; text-decoration:underline; font-size:13px;">📥 फाइल {i}</a><br>'
+                    download_links += f'<a href="/uploads/{f.strip()}" style="color:#00bcd4; margin-right:8px; text-decoration:underline; font-size:13px;">📥 फाइल {i}</a><br>'
 
                 cust_info_block = ""
                 if req['service_type'] != 'print':
