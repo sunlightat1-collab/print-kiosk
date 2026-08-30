@@ -1,0 +1,322 @@
+from flask import Flask, request, render_template_string, send_from_directory
+import os
+import win32api
+import pypdf
+import socket
+
+app = Flask(__name__)
+
+# अब सारी सामग्री C ड्राइव के 'KioskData' फोल्डर में सेव होगी
+UPLOAD_FOLDER = r'C:\KioskData'
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+UPI_ID = "Q508475385@ybl"
+MERCHANT_NAME = "Print Kiosk"
+
+pending_requests = []
+
+# C ड्राइव के फोल्डर से फोटो दिखाने के लिए रूट
+@app.route('/kiosk-image/<path:filename>')
+def kiosk_image(filename):
+    return send_from_directory(r'C:\KioskData', filename)
+
+HTML_HOME = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>राजस्थानी स्मार्ट प्रिंट कियोस्क</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; 
+            background-size: cover; 
+            padding: 20px; 
+            text-align: center; 
+            min-height: 100vh;
+        }
+        .card { 
+            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/prakash.jfif') no-repeat center center; 
+            background-size: cover;
+            max-width: 420px; 
+            margin: auto; 
+            padding: 20px; 
+            border-radius: 10px; 
+            box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
+        }
+        select, input[type="file"], button { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: rgba(255,255,255,0.9); }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #218838; }
+        .price-box { font-size: 18px; color: #333; margin: 10px 0; text-align: left; background: rgba(238, 242, 243, 0.9); padding: 12px; border-radius: 5px;}
+        .note { font-size: 13px; color: #444; text-align: left; margin-top: -5px; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>🖨️ खम्मा घणी सा🙏 प्रिंट कियोस्क</h2>
+        <form action="/checkout" method="POST" enctype="multipart/form-data">
+            
+            <label style="float:left; font-weight:bold;">📁 थारो डॉक्यूमेंट लगाओ... (ज्यादा सू ज्यादा 5):</label>
+            <input type="file" name="files" id="fileInput" accept=".pdf,.jpg,.jpeg,.jfif" multiple required onchange="updateInfo()">
+            <div class="note">💡 ध्यान राखोजे: आप एकसाथ 5 फाइल तक ले सकड़ो हो!</div>
+            
+            <label style="float:left; font-weight:bold; margin-top:5px;">⚙️ किस्यो कै प्रिंट चहीजै:</label>
+            <select name="print_type" id="print_type" onchange="updateInfo()">
+                <option value="bw">📄 ब्लैक एंड व्हाइट (कागो-काली)</option>
+                <option value="color">🎨 कलर प्रिंट (रंगीन)</option>
+                <option value="aadhaar">🆔 आधार कार्ड प्रिंट (₹10)</option>
+                <option value="photos">🖼️ फोटो प्रिंट - (₹10 प्रति फोटो)</option>
+            </select>
+
+            <div class="price-box" id="priceDisplay">
+                <b>रुपया:</b> आगे बढ़ो फेर पिसा बटा स्याँ🙌
+            </div>
+
+            <button type="submit">🚀 आगे बड़ों</button>
+        </form>
+    </div>
+
+    <script>
+        function updateInfo() {
+            var fileInput = document.getElementById("fileInput");
+            var count = fileInput.files.length;
+            if (count > 5) {
+                alert("⚠️ खम्मा घणी सा! एक बार में सिर्फ 5 फाइल ही चुन सको हो!");
+                fileInput.value = ""; 
+            }
+        }
+    </script>
+</body>
+</html>
+'''
+
+@app.route('/')
+def home():
+    return render_template_string(HTML_HOME)
+
+
+@app.route('/checkout', methods=['POST'])
+def checkout():
+    try:
+        uploaded_files = request.files.getlist('files')
+        print_type = request.form.get('print_type')
+        
+        if not uploaded_files or uploaded_files[0].filename == '':
+            return "कोई फाइल कोनी चुणी! <a href='/'>पाछा जाओ</a>"
+        
+        saved_file_paths = []
+        total_pages = 0
+        is_photo_upload = False
+
+        for file in uploaded_files:
+            if file and file.filename != '':
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                file.save(file_path)
+                saved_file_paths.append(file_path)
+                
+                filename_lower = file.filename.lower()
+                if filename_lower.endswith(('.jpg', '.jpeg', '.png', '.jfif')):
+                    is_photo_upload = True
+                elif filename_lower.endswith('.pdf'):
+                    try:
+                        reader = pypdf.PdfReader(file_path)
+                        total_pages += len(reader.pages)
+                    except:
+                        total_pages += 1
+
+        if print_type == 'photos' or is_photo_upload:
+            amount = len(saved_file_paths) * 10
+        elif print_type == 'color':
+            amount = max(1, total_pages) * 10
+        elif print_type == 'aadhaar':
+            amount = len(saved_file_paths) * 10
+        elif print_type == 'bw':
+            if total_pages <= 3: amount = 10
+            elif total_pages <= 5: amount = 20
+            elif total_pages <= 10: amount = 30
+            else: amount = 30 + (total_pages - 10) * 3
+        else:
+            amount = 10
+
+        upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
+        qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
+        paths_string = ",".join(saved_file_paths)
+
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>स्कैन कर ने पेमेंट करो</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { 
+                    font-family: Arial, sans-serif; 
+                    background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; 
+                    background-size: cover; 
+                    padding: 20px; 
+                    text-align: center; 
+                    min-height: 100vh;
+                }
+                .card { 
+                    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/prakash.jfif') no-repeat center center; 
+                    background-size: cover;
+                    max-width: 400px; 
+                    margin: auto; 
+                    padding: 20px; 
+                    border-radius: 10px; 
+                    box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
+                }
+                .btn-wait { background-color: #ffc107; color: #333; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; width: 100%; margin-top: 15px; font-weight: bold; cursor: pointer;}
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2>💳 QR स्कैन कर ने रूप्या भेजो</h2>
+                <p><b>कुल रुपया:</b> <span style="font-size: 26px; color: #d9534f;">₹{{ amount }}</span></p>
+                <p style="font-size: 14px; color: #222; font-weight: bold;">कूँण से भी UPI ॲप सू स्कैन करो:</p>
+                
+                <img src="{{ qr_url }}" alt="UPI QR Code" style="border: 2px solid #ddd; border-radius: 8px; padding: 5px; background: white;">
+                
+                <form action="/submit-request" method="POST">
+                    <input type="hidden" name="file_paths" value="{{ paths_string }}">
+                    <input type="hidden" name="amount" value="{{ amount }}">
+                    <button type="submit" class="btn-wait">⏳ मैं पैमेंट कर दियो है, दुकानदार ने सूचणा भेजो</button>
+                </form>
+            </div>
+        </body>
+        </html>
+        ''', amount=amount, qr_url=qr_api_url, paths_string=paths_string)
+    except Exception as e:
+        return f"<h3>काई गलती है: {e}</h3><a href='/'>पाछा जाओ</a>"
+
+
+@app.route('/submit-request', methods=['POST'])
+def submit_request():
+    try:
+        paths_string = request.form.get('file_paths')
+        amount = request.form.get('amount')
+        
+        req_id = len(pending_requests) + 1
+        request_data = {'id': req_id, 'paths': paths_string, 'amount': amount}
+        pending_requests.append(request_data)
+
+        return '''
+            <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.9); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
+                <h2 style="color:#d9534f;">⏳ पैमेंट री सूचणा दुकानदारा कन्ने पुग गी है!</h2>
+                <p style="font-size:18px;">थारो पैमेंट चेक हो रिया है। थोड़ी देर में प्रिंट निकल जावेलो...</p>
+                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">होम पेज पाछा जाओ</a>
+            </div>
+        '''
+    except Exception as e:
+        return f"<h3>एरर: {e}</h3><a href='/'>पाछा जाओ</a>"
+
+
+@app.route('/admin-panel')
+def admin_panel():
+    try:
+        cards_html = ""
+        has_requests = "false"
+        
+        if not pending_requests:
+            cards_html = "<p style='color: #ddd;'>अभी कोई नई रिक्वेस्ट कोनी है...</p>"
+        else:
+            has_requests = "true"
+            for idx, req in enumerate(pending_requests):
+                cards_html += f'''
+                    <div style="background: rgba(0, 0, 0, 0.85); padding: 15px; margin: 10px auto; max-width: 400px; border-radius: 8px; border-left: 5px solid #28a745; text-align: left;">
+                        <p><b>रिक्वेस्ट नंबर:</b> #{req['id']}</p>
+                        <p><b>रुपया आया:</b> <span style="color:#4cd137;">₹{req['amount']}</span></p>
+                        <form action="/approve-print" method="POST">
+                            <input type="hidden" name="req_index" value="{idx}">
+                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 15px; font-size: 16px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px;">✅ पैमेंट पक्को कर ने प्रिंट चालू करो</button>
+                        </form>
+                    </div>
+                '''
+
+        return f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>दुकानदार एडमिन पैनल</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <meta http-equiv="refresh" content="3">
+            <style>
+                body {{ 
+                    font-family: Arial, sans-serif; 
+                    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; 
+                    background-size: cover; 
+                    color: #fff; 
+                    padding: 15px; 
+                    text-align: center; 
+                    min-height: 100vh;
+                }}
+            </style>
+            <script>
+                function playBeep() {{
+                    try {{
+                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        const oscillator = audioCtx.createOscillator();
+                        const gainNode = audioCtx.createGain();
+                        oscillator.type = 'sine';
+                        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+                        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                        oscillator.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        oscillator.start();
+                        oscillator.stop(audioCtx.currentTime + 0.3);
+                    }} catch(e) {{}}
+                }}
+
+                window.onload = function() {{
+                    var hasReq = {has_requests};
+                    var lastCount = localStorage.getItem('reqCount') || 0;
+                    var currentCount = {len(pending_requests)};
+
+                    if (currentCount > lastCount) {{
+                        playBeep();
+                    }}
+                    localStorage.setItem('reqCount', currentCount);
+                }};
+            </script>
+        </head>
+        <body>
+            <h2>🛡️ लाइव प्रिंट रिक्वेस्ट (राजस्थानी)</h2>
+            <p>पेंडिंग अप्रूवल:</p>
+            {cards_html}
+        </body>
+        </html>
+        '''
+    except Exception as e:
+        return f"एडमिन पैनल एरर: {e}"
+
+
+@app.route('/approve-print', methods=['POST'])
+def approve_print():
+    try:
+        req_index = int(request.form.get('req_index'))
+        
+        if 0 <= req_index < len(pending_requests):
+            req = pending_requests.pop(req_index)
+            file_paths = req['paths'].split(',')
+            
+            printer_name = 'Brother DCP-T220'
+            for path in file_paths:
+                if os.path.exists(path):
+                    win32api.ShellExecute(0, 'print', path, f'/d:"{printer_name}"', '.', 0)
+            
+            return "<h3 style='color:green; text-align:center; margin0-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px;'>🎉 प्रिंट कमांड भेज दी है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
+        
+        return "रिक्वेस्ट पहिले ही पूरी हो चुकी है! <a href='/admin-panel'>पाछा जाओ</a>"
+    except Exception as e:
+        return f"<h3>प्रिंटिंग एरर: {e}</h3><a href='/admin-panel'>पाछा जाओ</a>"
+
+
+if __name__ == '__main__':
+    hostname = socket.gethostname()
+    local_ip = socket.gethostbyname(hostname)
+    print(f"\n👉 ग्राहक लिंक: http://{local_ip}:5000")
+    print(f"👉 मोबाइल एडमिन पैनल लिंक: http://{local_ip}:5000/admin-panel\n")
+    
+    app.run(host='0.0.0.0', port=5000)
