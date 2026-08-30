@@ -4,7 +4,7 @@ import pypdf
 import socket
 
 app = Flask(__name__)
-app.secret_key = 'prakash_print_kiosk_secret_key'  # सत्र (Session) चालू रखने के लिए जरूरी है
+app.secret_key = 'prakash_print_kiosk_secret_key'
 
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
@@ -12,12 +12,11 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 UPI_ID = "Q508475385@ybl"
-MERCHANT_NAME = "Print Kiosk"
+MERCHANT_NAME = "BHUARKARKA SERVICES"
 
 pending_requests = []
-print_queue = []  # लोकल एजेंट के लिए प्रिंट कतार
+print_queue = []
 
-# फोल्डर से फाइल दिखाने के लिए रूट
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
@@ -30,7 +29,7 @@ HTML_HOME = '''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>राजस्थानी स्मार्ट प्रिंट कियोस्क</title>
+    <title>BHUARKARKA SERVICES - स्मार्ट कियोस्क</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { 
@@ -42,50 +41,79 @@ HTML_HOME = '''
             min-height: 100vh;
         }
         .card { 
-            background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/card.jpg') no-repeat center center; 
+            background: linear-gradient(rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.94)), url('/kiosk-image/card.jpg') no-repeat center center; 
             background-size: cover;
-            max-width: 420px; 
+            max-width: 450px; 
             margin: auto; 
             padding: 20px; 
             border-radius: 10px; 
             box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
+            text-align: left;
         }
-        select, input[type="file"], button { width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: rgba(255,255,255,0.9); }
-        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; }
+        select, input[type="file"], button { width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: rgba(255,255,255,0.95); }
+        button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; }
         button:hover { background-color: #218838; }
-        .price-box { font-size: 18px; color: #333; margin: 10px 0; text-align: left; background: rgba(238, 242, 243, 0.9); padding: 12px; border-radius: 5px;}
-        .note { font-size: 13px; color: #444; text-align: left; margin-top: -5px; margin-bottom: 10px; font-weight: bold; }
+        .note { font-size: 13px; color: #b22222; margin-top: 5px; font-weight: bold; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.5; }
+        label { font-weight: bold; color: #333; font-size: 14px; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>🖨️ खम्मा घणी सा🙏</h2>
+        <h2 style="text-align:center; color:#2c3e50;">🖨️ BHUARKARKA SERVICES 🙏</h2>
         <form action="/checkout" method="POST" enctype="multipart/form-data">
             
-            <label style="float:left; font-weight:bold;">📁 थारो डॉक्यूमेंट लगाओ... (ज्यादा सू ज्यादा 5):</label>
-            <input type="file" name="files" id="fileInput" accept=".pdf,.jpg,.jpeg,.jfif" multiple required onchange="updateInfo()">
-            <div class="note">💡 ध्यान राखोजे: आप एकसाथ पाँच फोटू या पीडीएफ लगा सको हो!</div>
-            
-            <label style="float:left; font-weight:bold; margin-top:5px;">⚙️ किस्यो कै प्रिंट चहीजै:</label>
-            <select name="print_type" id="print_type" onchange="updateInfo()">
-                <option value="bw">📄 ब्लैक एंड व्हाइट (काली)</option>             
+            <label>📌 काम/सेवा चुणो:</label>
+            <select name="service_type" id="serviceType" onchange="updateServiceRequirements()">
+                <option value="print">📄 सामान्य प्रिंट / डॉक्यूमेंट</option>
+                <option value="vivah">📜 विवाह प्रमाण पत्र</option>
+                <option value="aadhaar_update">🆔 आधार अड्रेस अपडेट</option>
+                <option value="pan">💳 पैन कार्ड (PAN Card)</option>
+                <option value="noc">📄 NOC प्रमाण पत्र</option>
+                <option value="jati">📜 जाति प्रमाण पत्र</option>
+                <option value="mool">🏠 मूल निवास प्रमाण पत्र</option>
             </select>
 
-            <div class="price-box" id="priceDisplay">
-                <b>रुपया:</b> आगे बढ़ो फेर पिसा बता स्याँ🙌
+            <div id="docInstructions" class="note" style="display:none;"></div>
+            <br>
+
+            <label id="fileLabel">📁 थारो डॉक्यूमेंट / फोटो लगाओ:</label>
+            <input type="file" name="files" id="fileInput" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
+            <div style="font-size: 12px; color: #555; margin-top: -4px;">💡 आप एकसाथ एक या ज्यादा फोटो/पीडीएफ चुन सको हो!</div>
+            
+            <div style="margin-top: 10px;">
+                <label>⚙️ प्रिंट/कार्य प्रकार:</label>
+                <select name="print_type">
+                    <option value="bw">ब्लैक एंड व्हाइट (सादी)</option>
+                    <option value="color">कलर प्रिंट (रंगीन)</option>
+                </select>
             </div>
 
-            <button type="submit">🚀 आगे बड़ों</button>
+            <button type="submit">🚀 आगे बड़ों & पेमेंट करो</button>
         </form>
     </div>
 
     <script>
-        function updateInfo() {
-            var fileInput = document.getElementById("fileInput");
-            var count = fileInput.files.length;
-            if (count > 5) {
-                alert("⚠️ खम्मा घणी सा! एक बार में सिर्फ 5 फाइल ही चुन सको हो!");
-                fileInput.value = ""; 
+        function updateServiceRequirements() {
+            var service = document.getElementById("serviceType").value;
+            var box = document.getElementById("docInstructions");
+            
+            if (service === 'vivah') {
+                box.style.display = "block";
+                box.innerHTML = "📝 <b>विवाह प्रमाण पत्र के लिए जरूरी दस्तावेज:</b><br>• आधार वर का + 4 पासपोर्ट साइज फोटो<br>• आधार वधू का + 4 पासपोर्ट साइज फोटो<br>• आधार वर के पिता/माता का + 1 पासपोर्ट साइज फोटो<br>• आधार वधू के पिता/माता का + 1 पासपोर्ट साइज फोटो<br>• आधार वर पक्ष गवाह का + 1 पासपोर्ट साइज फोटो<br>• आधार वधू पक्ष गवाह का + 1 पासपोर्ट साइज फोटो<br>• आधार पंडित/मौल्वी/पाथी का + 1 पासपोर्ट साइज फोटो<br>• वर वधू की संयुक्त फोटो 4x6 साइज में";
+            } else if (service === 'aadhaar_update') {
+                box.style.display = "block";
+                box.innerHTML = "📝 <b>आधार अड्रेस अपडेट के लिए जरूरी:</b><br>• पहचान पत्र / राशन कार्ड / जाति प्रमाण पत्र / बैंक पासबुक फोटो उक्त, जिसमें जानकारी मिल हो।";
+            } else if (service === 'pan') {
+                box.style.display = "block";
+                box.innerHTML = "📝 <b>पैन कार्ड के लिए जरूरी दस्तावेज:</b><br>• आधार कार्ड<br>• 10वीं मार्कशीट / पहचान पत्र जिसमें जानकारी मिल हो।";
+            } else if (service === 'noc') {
+                box.style.display = "block";
+                box.innerHTML = "📝 <b>NOC प्रमाण पत्र के लिए:</b> संबंधित दस्तावेज अपलोड करें।";
+            } else if (service === 'jati' || service === 'mool') {
+                box.style.display = "block";
+                box.innerHTML = "📝 <b>जाति / मूल निवास प्रमाण पत्र के लिए जरूरी:</b><br>• आधार स्वयं, पिता का आधार, जन आधार कार्ड, राशन कार्ड, पिता का पहचान पत्र<br>• जमाबंदी या जाति का प्रूफ / 1993 या 1980 की वोटर लिस्ट (जाति के लिए)<br>• 2008, 2013, 2017, 2026 की वोटर लिस्ट (मूल निवास के लिए)";
+            } else {
+                box.style.display = "none";
             }
         }
     </script>
@@ -102,6 +130,7 @@ def home():
 def checkout():
     try:
         uploaded_files = request.files.getlist('files')
+        service_type = request.form.get('service_type')
         print_type = request.form.get('print_type')
         
         if not uploaded_files or uploaded_files[0].filename == '':
@@ -109,7 +138,6 @@ def checkout():
         
         saved_file_filenames = []
         total_pages = 0
-        is_photo_upload = False
 
         for file in uploaded_files:
             if file and file.filename != '':
@@ -117,29 +145,20 @@ def checkout():
                 file.save(file_path)
                 saved_file_filenames.append(file.filename)
                 
-                filename_lower = file.filename.lower()
-                if filename_lower.endswith(('.jpg', '.jpeg', '.png', '.jfif')):
-                    is_photo_upload = True
-                elif filename_lower.endswith('.pdf'):
+                if file.filename.lower().endswith('.pdf'):
                     try:
                         reader = pypdf.PdfReader(file_path)
                         total_pages += len(reader.pages)
                     except:
                         total_pages += 1
 
-        if print_type == 'photos' or is_photo_upload:
-            amount = len(saved_file_filenames) * 10
-        elif print_type == 'color':
-            amount = max(1, total_pages) * 10
-        elif print_type == 'aadhaar':
-            amount = len(saved_file_filenames) * 10
-        elif print_type == 'bw':
-            if total_pages <= 3: amount = 10
-            elif total_pages <= 5: amount = 20
-            elif total_pages <= 10: amount = 30
-            else: amount = 30 + (total_pages - 10) * 3
+        # सेवा के आधार पर फीस तय करना (आप अपने हिसाब से राशि बदल सकते हैं)
+        if service_type in ['vivah', 'jati', 'mool']:
+            amount = 50
+        elif service_type in ['pan', 'aadhaar_update', 'noc']:
+            amount = 30
         else:
-            amount = 10
+            amount = 10 * len(saved_file_filenames)
 
         upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
         qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
@@ -161,7 +180,7 @@ def checkout():
                     min-height: 100vh;
                 }
                 .card { 
-                    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/card.jpg') no-repeat center center; 
+                    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/prakash.jfif') no-repeat center center; 
                     background-size: cover;
                     max-width: 400px; 
                     margin: auto; 
@@ -183,12 +202,13 @@ def checkout():
                 <form action="/submit-request" method="POST">
                     <input type="hidden" name="filenames" value="{{ filenames_string }}">
                     <input type="hidden" name="amount" value="{{ amount }}">
+                    <input type="hidden" name="service_type" value="{{ service_type }}">
                     <button type="submit" class="btn-wait">⏳ मैं पैमेंट कर दियो है, दुकानदार ने सूचणा भेजो</button>
                 </form>
             </div>
         </body>
         </html>
-        ''', amount=amount, qr_url=qr_api_url, filenames_string=filenames_string)
+        ''', amount=amount, qr_url=qr_api_url, filenames_string=filenames_string, service_type=service_type)
     except Exception as e:
         return f"<h3>काई गलती है: {e}</h3><a href='/'>पाछा जाओ</a>"
 
@@ -198,15 +218,21 @@ def submit_request():
     try:
         filenames_string = request.form.get('filenames')
         amount = request.form.get('amount')
+        service_type = request.form.get('service_type')
         
         req_id = len(pending_requests) + 1
-        request_data = {'id': req_id, 'filenames': filenames_string, 'amount': amount}
+        request_data = {
+            'id': req_id, 
+            'filenames': filenames_string, 
+            'amount': amount,
+            'service_type': service_type
+        }
         pending_requests.append(request_data)
 
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.9); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
                 <h2 style="color:#d9534f;">⏳ पैमेंट री सूचणा दुकानदारा कन्ने पुग गी है!</h2>
-                <p style="font-size:18px;">थारो पैमेंट चेक हो रिया है। थोड़ी देर में प्रिंट निकल जावेलो...</p>
+                <p style="font-size:18px;">थारी रिक्वेस्ट एडमिन पैनल पर भेज दी है। काम जल्दी ही शुरू हो जावेलो...</p>
                 <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">होम पेज पाछा जाओ</a>
             </div>
         '''
@@ -214,13 +240,12 @@ def submit_request():
         return f"<h3>एरर: {e}</h3><a href='/'>पाछा जाओ</a>"
 
 
-# 1. एडमिन लॉगिन पेज
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
     error_msg = ""
     if request.method == 'POST':
         password = request.form.get('password')
-        if password == '1234':  # आप चाहें तो यहाँ '1234' की जगह अपना कोई दूसरा पासवर्ड रख सकते हैं
+        if password == '1234': 
             session['admin_logged_in'] = True
             return redirect(url_for('admin_panel'))
         else:
@@ -237,13 +262,12 @@ def admin_login():
                 .login-card {{ background: #333; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }}
                 input {{ width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; border-radius: 5px; border: none; box-sizing: border-box; }}
                 button {{ width: 100%; padding: 10px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }}
-                button:hover {{ background: #218838; }}
                 .error {{ color: #ff6b6b; font-size: 14px; margin-bottom: 10px; }}
             </style>
         </head>
         <body>
             <div class="login-card">
-                <h2>🔐 दुकानदार लॉगिन</h2>
+                <h2>🔐 BHUARKARKA LOGIN</h2>
                 <div class="error">{error_msg}</div>
                 <form method="POST">
                     <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" required autofocus>
@@ -255,7 +279,6 @@ def admin_login():
     '''
 
 
-# 2. मुख्य एडमिन पैनल (अब इस पर पासवर्ड का ताला लग चुका है)
 @app.route('/admin-panel')
 def admin_panel():
     if not session.get('admin_logged_in'):
@@ -266,17 +289,19 @@ def admin_panel():
         has_requests = "false"
         
         if not pending_requests:
-            cards_html = "<p style='color: #ddd;'>अभी कोई नई रिक्वेस्ट कोनी है...</p>"
+            cards_html = "<p style='color: #ddd;'>अभी कोई नई सर्विस रिक्वेस्ट कोनी है...</p>"
         else:
             has_requests = "true"
             for idx, req in enumerate(pending_requests):
                 cards_html += f'''
                     <div style="background: rgba(0, 0, 0, 0.85); padding: 15px; margin: 10px auto; max-width: 400px; border-radius: 8px; border-left: 5px solid #28a745; text-align: left;">
                         <p><b>रिक्वेस्ट नंबर:</b> #{req['id']}</p>
+                        <p><b>सेवा का नाम:</b> <span style="color:#ffeb3b; text-transform:uppercase;">{req['service_type']}</span></p>
                         <p><b>रुपया आया:</b> <span style="color:#4cd137;">₹{req['amount']}</span></p>
+                        <p><b>फाइलें:</b> <a href="/uploads/{req['filenames']}" target="_blank" style="color:#00bcd4;">फाइल देखें</a></p>
                         <form action="/approve-print" method="POST">
                             <input type="hidden" name="req_index" value="{idx}">
-                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 15px; font-size: 16px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px;">✅ पैमेंट पक्को कर ने प्रिंट चालू करो</button>
+                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 15px; font-size: 16px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px;">✅ पेमेंट पक्का, काम शुरू करो</button>
                         </form>
                     </div>
                 '''
@@ -285,7 +310,7 @@ def admin_panel():
         <!DOCTYPE html>
         <html>
         <head>
-            <title>दुकानदार एडमिन पैनल</title>
+            <title>BHUARKARKA - एडमिन पैनल</title>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta http-equiv="refresh" content="3">
             <style>
@@ -299,40 +324,12 @@ def admin_panel():
                     min-height: 100vh;
                 }}
             </style>
-            <script>
-                function playBeep() {{
-                    try {{
-                        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                        const oscillator = audioCtx.createOscillator();
-                        const gainNode = audioCtx.createGain();
-                        oscillator.type = 'sine';
-                        oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
-                        gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                        oscillator.connect(gainNode);
-                        gainNode.connect(audioCtx.destination);
-                        oscillator.start();
-                        oscillator.stop(audioCtx.currentTime + 0.3);
-                    }} catch(e) {{}}
-                }}
-
-                window.onload = function() {{
-                    var hasReq = {has_requests};
-                    var lastCount = localStorage.getItem('reqCount') || 0;
-                    var currentCount = {len(pending_requests)};
-
-                    if (currentCount > lastCount) {{
-                        playBeep();
-                    }}
-                    localStorage.setItem('reqCount', currentCount);
-                }};
-            </script>
         </head>
         <body>
-            <h2>🛡️ लाइव प्रिंट रिक्वेस्ट (राजस्थानी)</h2>
-            <p>पेंडिंग अप्रूवल:</p>
+            <h2>🛡️ BHUARKARKA SERVICES - लाइव रिक्वेस्ट</h2>
             {cards_html}
             <br>
-            <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold;">🔒 लॉगआउट (बाहर निकलें)</a>
+            <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold;">🔒 लॉगआउट</a>
         </body>
         </html>
         '''
@@ -357,11 +354,11 @@ def approve_print():
             req = pending_requests.pop(req_index)
             print_queue.append(req)
             
-            return "<h3 style='color:green; text-align:center; margin-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px;'>🎉 प्रिंट कमांड कतार में भेज दी है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
+            return "<h3 style='color:green; text-align:center; margin-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px;'>🎉 रिक्वेस्ट अप्रूव कर दी है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
         
         return "रिक्वेस्ट पहिले ही पूरी हो चुकी है! <a href='/admin-panel'>पाछा जाओ</a>"
     except Exception as e:
-        return f"<h3>प्रिंटिंग एरर: {e}</h3><a href='/admin-panel'>पाछा जाओ</a>"
+        return f"<h3>एरर: {e}</h3><a href='/admin-panel'>पाछा जाओ</a>"
 
 
 @app.route('/get-next-print', methods=['GET'])
