@@ -115,9 +115,9 @@ HTML_HOME = '''
         }
         .title-text {
             font-family: 'Britannic Bold', Arial, sans-serif;
-            font-size: 12px;
+            font-size: 11px;
             text-align: center;
-            padding: 0 5px;
+            padding: 0 4px;
             color: #2c3e50;
             letter-spacing: 0.5px;
         }
@@ -148,6 +148,11 @@ HTML_HOME = '''
             <a href="/service/pvc_aadhar" class="app-icon-card">
                 <div class="emoji">🪪</div>
                 <div class="title-text">PVC AADHAR</div>
+            </a>
+
+            <a href="/service/bonafide" class="app-icon-card">
+                <div class="emoji">📜</div>
+                <div class="title-text">मूल निवास प्रमाण पत्र</div>
             </a>
 
             <a href="/service/farmer" class="app-icon-card">
@@ -250,6 +255,45 @@ def service_page(service_name):
                 <label>📁 आधार कार्ड अपलोड करें (या फोटो/कॉपी):</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'bonafide':
+        form_html = '''
+            <h2>📜 मूल निवास प्रमाण पत्र (Bonafide)</h2>
+            <div class="note">
+                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
+                1. आधार स्वयं एवं पिता का आधार<br>
+                2. जन आधार एवं राशन कार्ड<br>
+                3. पिता का पहचान पत्र / वोटर लिस्ट (2008, 2013, 2017, 2026 आदि)<br>
+                4. नीचे दिए गए लिंक से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर **2 उत्तरदायी गवाहों से रिपोर्ट (सत्यापन)** करवाकर अपलोड करें।<br>
+                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
+                    📥 <a href="/uploads/Bonafide-1.pdf" download style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
+                </div>
+                <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
+                <span style="font-size: 12px; color: #0056b3;">📞 सहायता के लिए व्हाट्सएप नंबर <b>7610967507</b> पर संपर्क करें। 🙌</span>
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="bonafide">
+                <label>👤 आवेदक का पूरा नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                <label>📱 मोबाइल नंबर:</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+                
+                <label>📁 फाइल 1: भरा हुआ मूलनिवास आवेदन पत्र (गवाह रिपोर्ट सहित):</label>
+                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                
+                <label>📁 फाइल 2: स्वयं व पिता का आधार कार्ड:</label>
+                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                
+                <label>📁 फाइल 3: जन आधार व राशन कार्ड:</label>
+                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
+
+                <label>📁 फाइल 4: पिता का पहचान पत्र व वोटर लिस्ट सबूत:</label>
+                <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
+
+                <button type="submit">🚀 मूल निवास प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
         '''
     elif service_name == 'farmer':
@@ -461,6 +505,26 @@ def checkout():
             saved_file_filenames.append(file_col1.filename)
             
             amount = 100
+
+        elif service_type == 'bonafide':
+            cust_name = request.form.get('cust_name')
+            cust_mobile = request.form.get('cust_mobile')
+            cust_email = request.form.get('cust_email')
+            
+            file_col1 = request.files.get('file_col1')
+            file_col2 = request.files.get('file_col2')
+            file_col3 = request.files.get('file_col3')
+            file_col4 = request.files.get('file_col4')
+            
+            if not file_col1 or file_col1.filename == '' or not file_col2 or file_col2.filename == '' or not file_col3 or file_col3.filename == '' or not file_col4 or file_col4.filename == '':
+                return "कृपया सभी आवश्यक 4 दस्तावेज अपलोड करें! <a href='/service/bonafide'>वापस जाएं</a>"
+            
+            for file in [file_col1, file_col2, file_col3, file_col4]:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                file.save(file_path)
+                saved_file_filenames.append(file.filename)
+                
+            amount = 50
 
         elif service_type in ['farmer', 'jan_aadhaar']:
             cust_name = request.form.get('cust_name')
