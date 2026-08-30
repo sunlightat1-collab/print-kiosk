@@ -45,9 +45,11 @@ HTML_HOME = '''
             margin: auto;
         }
         h1 {
+            font-family: 'Britannic Bold', Arial, sans-serif;
             color: white;
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
             margin-bottom: 25px;
+            letter-spacing: 1px;
         }
         .app-grid {
             display: flex;
@@ -81,11 +83,12 @@ HTML_HOME = '''
             margin-bottom: 8px;
         }
         .title-text {
-            font-size: 13px;
-            font-weight: bold;
+            font-family: 'Britannic Bold', Arial, sans-serif;
+            font-size: 14px;
             text-align: center;
             padding: 0 5px;
             color: #2c3e50;
+            letter-spacing: 0.5px;
         }
     </style>
 </head>
@@ -97,12 +100,12 @@ HTML_HOME = '''
         <div class="app-grid">
             <a href="/service/print" class="app-icon-card">
                 <div class="emoji">📄</div>
-                <div class="title-text">सेल्फ प्रिंट</div>
+                <div class="title-text">SELF PRINT</div>
             </a>
 
             <a href="/service/pan" class="app-icon-card">
                 <div class="emoji">💳</div>
-                <div class="title-text">पैन कार्ड आवेदन</div>
+                <div class="title-text">PAN CARD</div>
             </a>
 
             <a href="/service/farmer" class="app-icon-card">
@@ -124,7 +127,7 @@ def home():
 def service_page(service_name):
     if service_name == 'print':
         form_html = '''
-            <h2>📄 सेल्फ प्रिंट सेवा</h2>
+            <h2>📄 SELF PRINT SERVICE</h2>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="print">
                 
@@ -142,7 +145,7 @@ def service_page(service_name):
         '''
     elif service_name == 'pan':
         form_html = '''
-            <h2>💳 पैन कार्ड आवेदन</h2>
+            <h2>💳 PAN CARD APPLICATION</h2>
             <div class="note">
                 <b>📌 जरूरी नियम व दस्तावेज:</b><br>
                 1. <b>आधार कार्ड</b> (मुख्य पहचान)<br>
@@ -179,13 +182,13 @@ def service_page(service_name):
         '''
     elif service_name == 'farmer':
         form_html = '''
-            <h2>🌽 FARMER ID (किसान आईडी) आवेदन</h2>
+            <h2>🌽 FARMER ID APPLICATION</h2>
             <div class="note">
-                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
+                <b>📌 जरूरी दस्तावेज:</b><br>
                 1. आधार कार्ड<br>
                 2. जमाबंदी<br>
                 3. जन आधार<br>
-                <span style="color: #d9534f; font-weight: bold;">⚠️ ओटीपी (OTP) आधार कार्ड में दर्ज मोबाइल नंबर पर भेजा जाएगा।</span><br>
+                4. Otp आधार कार्ड में दर्ज नंबर पर<br>
                 <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
                 <span style="font-size: 12px; color: #0056b3;">📞 अपनी रिक्वेस्ट की पुष्टि के लिए व्हाट्सएप नंबर <b>7610967507</b> पर कॉल या व्हाट्सएप मैसेज करें। 🙌</span>
             </div>
@@ -201,16 +204,16 @@ def service_page(service_name):
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
 
-                <label>📁 कॉलम 1: आधार कार्ड अपलोड करें:</label>
+                <label>📁 ब्राउज़र विकल्प 1 (आधार कार्ड):</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
 
-                <label>📁 कॉलम 2: जमाबंदी अपलोड करें:</label>
+                <label>📁 ब्राउज़र विकल्प 2 (जमाबंदी):</label>
                 <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
 
-                <label>📁 कॉलम 3: जन आधार अपलोड करें:</label>
+                <label>📁 ब्राउज़र विकल्प 3 (जन आधार):</label>
                 <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
 
-                <button type="submit">🚀 किसान आईडी के लिए आगे बढ़ें</button>
+                <button type="submit">🚀 FARMER ID के लिए आगे बढ़ें</button>
             </form>
         '''
     else:
@@ -243,11 +246,11 @@ def service_page(service_name):
             input[type="text"], input[type="file"], select, button { 
                 width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; 
             }
-            button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; }
+            button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 0.5px;}
             button:hover { background-color: #218838; }
             .note { font-size: 13px; color: #b22222; margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.5; }
             label { font-weight: bold; color: #333; font-size: 13px; }
-            h2 { color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; }
+            h2 { font-family: 'Britannic Bold', Arial, sans-serif; color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; letter-spacing: 0.5px; }
             .back-link { display: block; text-align: center; margin-top: 15px; color: #007BFF; text-decoration: none; font-weight: bold; }
         </style>
     </head>
@@ -291,14 +294,14 @@ def checkout():
             file_other = request.files.get('file_other')
             
             if not file_aadhar or file_aadhar.filename == '' or not file_other or file_other.filename == '':
-                return "कृपया दोनों दस्तावेज (आधार और अन्य आईडी) अपलोड करें! <a href='/service/pan'>वापस जाएं</a>"
+                return "कृपया दोनों दस्तावेज अपलोड करें! <a href='/service/pan'>वापस जाएं</a>"
             
             for file in [file_aadhar, file_other]:
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                 file.save(file_path)
                 saved_file_filenames.append(file.filename)
                 
-            amount = 200  # पैन कार्ड का निर्धारित शुल्क ₹200
+            amount = 200
 
         elif service_type == 'farmer':
             cust_name = request.form.get('cust_name')
@@ -310,14 +313,14 @@ def checkout():
             file_col3 = request.files.get('file_col3')
             
             if not file_col1 or file_col1.filename == '' or not file_col2 or file_col2.filename == '' or not file_col3 or file_col3.filename == '':
-                return "कृपया तीनों दस्तावेज (आधार, जमाबंदी और जन आधार) अपलोड करें! <a href='/service/farmer'>वापस जाएं</a>"
+                return "कृपया तीनों ब्राउज़र विकल्प के दस्तावेज अपलोड करें! <a href='/service/farmer'>वापस जाएं</a>"
             
             for file in [file_col1, file_col2, file_col3]:
                 file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                 file.save(file_path)
                 saved_file_filenames.append(file.filename)
                 
-            amount = 50  # Farmer ID सेवा शुल्क (आवश्यकतानुसार बदला जा सकता है)
+            amount = 50
 
         upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
         qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
@@ -346,19 +349,20 @@ def checkout():
                     border-radius: 12px; 
                     box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
                 }
-                .btn-wait { background-color: #ffc107; color: #333; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; width: 100%; margin-top: 15px; font-weight: bold; cursor: pointer;}
+                h2 { font-family: 'Britannic Bold', Arial, sans-serif; color: #2c3e50; }
+                .btn-wait { background-color: #ffc107; color: #333; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; width: 100%; margin-top: 15px; font-weight: bold; cursor: pointer; font-family: 'Britannic Bold', Arial, sans-serif;}
             </style>
         </head>
         <body>
             <div class="card">
-                <h2>💳 QR स्कैन करके रुपये भेजें</h2>
-                <p><b>सेवा:</b> <span style="text-transform:uppercase; color:#007BFF;">{{ service_type }}</span></p>
+                <h2>💳 SCAN & PAY</h2>
+                <p><b>सेवा:</b> <span style="text-transform:uppercase; color:#007BFF; font-family:'Britannic Bold', Arial, sans-serif;">{{ service_type }}</span></p>
                 {% if cust_name != "सामान्य ग्राहक (सेल्फ प्रिंट)" %}
                 <p><b>आवेदक:</b> {{ cust_name }}</p>
                 <p><b>मोबाइल:</b> {{ cust_mobile }}</p>
                 <p><b>जीमेल:</b> {{ cust_email }}</p>
                 {% endif %}
-                <p><b>कुल राशि:</b> <span style="font-size: 26px; color: #d9534f;">₹{{ amount }}</span></p>
+                <p><b>कुल राशि:</b> <span style="font-size: 26px; color: #d9534f; font-family:'Britannic Bold', Arial, sans-serif;">₹{{ amount }}</span></p>
                 
                 <img src="{{ qr_url }}" alt="UPI QR Code" style="border: 2px solid #ddd; border-radius: 8px; padding: 5px; background: white;">
                 
@@ -403,9 +407,9 @@ def submit_request():
 
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.95); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
-                <h2 style="color:#d9534f;">⏳ पेमेंट की सूचना दुकानदार को पहुँच गई है!</h2>
+                <h2 style="color:#d9534f; font-family:'Britannic Bold', Arial, sans-serif;">⏳ PAYMENT NOTIFIED!</h2>
                 <p style="font-size:18px;">कृपया पुष्टि के लिए <b>7610967507</b> पर व्हाट्सएप मैसेज या कॉल करें।</p>
-                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">होम पेज पर वापस जाएं</a>
+                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px; font-family:'Britannic Bold', Arial, sans-serif;">HOME PAGE</a>
             </div>
         '''
     except Exception as e:
@@ -432,14 +436,15 @@ def admin_login():
             <style>
                 body { font-family: Arial, sans-serif; background: #222; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
                 .login-card { background: #333; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }
+                h2 { font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 0.5px; }
                 input { width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; border-radius: 5px; border: none; box-sizing: border-box; }
-                button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+                button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; font-family: 'Britannic Bold', Arial, sans-serif; }
                 .error { color: #ff6b6b; font-size: 14px; margin-bottom: 10px; }
             </style>
         </head>
         <body>
             <div class="login-card">
-                <h2>🔐 BHUARKARKA LOGIN</h2>
+                <h2>🔐 ADMIN LOGIN</h2>
                 <div class="error">''' + error_msg + '''</div>
                 <form method="POST">
                     <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" required autofocus>
@@ -459,32 +464,32 @@ def admin_panel():
     try:
         cards_html = ""
         if not pending_requests:
-            cards_html = "<p style='color: #ddd;'>अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</p>"
+            cards_html = "<p style='color: #ddd; font-size: 18px;'>अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</p>"
         else:
             for idx, req in enumerate(pending_requests):
                 files_list = req['filenames'].split(',')
                 download_links = ""
                 for i, f in enumerate(files_list, 1):
-                    download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:10px; text-decoration:underline;">📥 फाइल {i} डाउनलोड करें</a><br>'
+                    download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:8px; text-decoration:underline; font-size:13px;">📥 फाइल {i}</a><br>'
 
                 cust_info_block = ""
                 if req['service_type'] in ['pan', 'farmer']:
                     cust_info_block = f'''
-                        <p><b>आवेदक का नाम:</b> <span style="color:#00e676; font-size:17px;">{req['cust_name']}</span></p>
-                        <p><b>मोबाइल नंबर:</b> <span style="color:#ffeb3b;">{req['cust_mobile']}</span></p>
-                        <p><b>जीमेल:</b> <span style="color:#ff9800;">{req['cust_email']}</span></p>
+                        <p style="margin: 5px 0;"><b>आवेदक:</b> <span style="color:#00e676;">{req['cust_name']}</span></p>
+                        <p style="margin: 5px 0;"><b>मोबाइल:</b> <span style="color:#ffeb3b;">{req['cust_mobile']}</span></p>
+                        <p style="margin: 5px 0;"><b>जीमेल:</b> <span style="color:#ff9800; font-size:12px;">{req['cust_email']}</span></p>
                     '''
 
                 cards_html += f'''
-                    <div style="background: rgba(0, 0, 0, 0.85); padding: 15px; margin: 15px auto; max-width: 450px; border-radius: 10px; border-left: 5px solid #28a745; text-align: left;">
-                        <p><b>रिक्वेस्ट नंबर:</b> #{req['id']}</p>
-                        <p><b>सेवा प्रकार:</b> <span style="color:#ffeb3b; text-transform:uppercase; font-weight:bold;">{req['service_type']}</span></p>
+                    <div style="background: rgba(0, 0, 0, 0.9); padding: 15px; width: 300px; border-radius: 10px; border-left: 5px solid #28a745; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
+                        <p style="margin: 5px 0;"><b>रिक्वेस्ट नंबर:</b> #{req['id']}</p>
+                        <p style="margin: 5px 0;"><b>सेवा प्रकार:</b> <span style="color:#ffeb3b; text-transform:uppercase; font-weight:bold; font-family:'Britannic Bold', Arial, sans-serif;">{req['service_type']}</span></p>
                         {cust_info_block}
-                        <p><b>रुपया प्राप्त:</b> <span style="color:#4cd137;">₹{req['amount']}</span></p>
-                        <p><b>दस्तावेज़ फाइलें:</b><br>{download_links}</p>
+                        <p style="margin: 5px 0;"><b>रुपया प्राप्त:</b> <span style="color:#4cd137; font-family:'Britannic Bold', Arial, sans-serif;">₹{req['amount']}</span></p>
+                        <p style="margin: 8px 0 5px 0;"><b>दस्तावेज़ फाइलें:</b><br>{download_links}</p>
                         <form action="/approve-print" method="POST">
                             <input type="hidden" name="req_index" value="{idx}">
-                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 10px 15px; font-size: 15px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px;">✅ काम पूरा हुआ / अप्रूव करें</button>
+                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 8px 10px; font-size: 14px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-family:'Britannic Bold', Arial, sans-serif;">✅ काम पूरा हुआ / अप्रूव करें</button>
                         </form>
                     </div>
                 '''
@@ -495,7 +500,7 @@ def admin_panel():
         <head>
             <title>BHUARKARKA - एडमिन पैनल</title>
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <meta http-equiv="refresh" content="3">
+            <meta http-style refresh content="3">
             <style>
                 body { 
                     font-family: Arial, sans-serif; 
@@ -506,13 +511,27 @@ def admin_panel():
                     text-align: center; 
                     min-height: 100vh;
                 }
+                h2 {
+                    font-family: 'Britannic Bold', Arial, sans-serif;
+                    letter-spacing: 1px;
+                }
+                .requests-container {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 20px;
+                    justify-content: center;
+                    align-items: flex-start;
+                    margin-top: 20px;
+                }
             </style>
         </head>
         <body>
-            <h2>🛡️ BHUARKARKA SERVICES - लाइव रिक्वेस्ट पैनल</h2>
-            ''' + cards_html + '''
-            <br>
-            <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold;">🔒 लॉगआउट</a>
+            <h2>🛡️ BHUARKARKA SERVICES - LIVE REQUEST PANEL</h2>
+            <div class="requests-container">
+                ''' + cards_html + '''
+            </div>
+            <br><br>
+            <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold; display: inline-block; font-family:'Britannic Bold', Arial, sans-serif;">🔒 LOGOUT</a>
         </body>
         </html>
         '''
@@ -535,7 +554,7 @@ def approve_print():
         if 0 <= req_index < len(pending_requests):
             req = pending_requests.pop(req_index)
             print_queue.append(req)
-            return "<h3 style='color:green; text-align:center; margin-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px;'>🎉 रिक्वेस्ट पूरी कर दी गई है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
+            return "<h3 style='color:green; text-align:center; margin-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px; font-family:Arial;'>🎉 रिक्वेस्ट पूरी कर दी गई है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
         return "रिक्वेस्ट पहले ही हटाई जा चुकी है! <a href='/admin-panel'>पाछा जाओ</a>"
     except Exception as e:
         return f"<h3>एरर: {e}</h3><a href='/admin-panel'>पाछा जाओ</a>"
