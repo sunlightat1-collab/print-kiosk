@@ -1,9 +1,11 @@
-from flask import Flask, request, render_template_string, send_from_directory
+from flask import Flask, request, render_template_string, send_from_directory, redirect, url_for, session
 import os
 import pypdf
 import socket
 
 app = Flask(__name__)
+app.secret_key = 'prakash_print_kiosk_secret_key'  # सत्र (Session) चालू रखने के लिए जरूरी है
+
 UPLOAD_FOLDER = 'uploads'
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -33,7 +35,7 @@ HTML_HOME = '''
     <style>
         body { 
             font-family: Arial, sans-serif; 
-            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; 
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; 
             background-size: cover; 
             padding: 20px; 
             text-align: center; 
@@ -62,7 +64,7 @@ HTML_HOME = '''
             
             <label style="float:left; font-weight:bold;">📁 थारो डॉक्यूमेंट लगाओ... (ज्यादा सू ज्यादा 5):</label>
             <input type="file" name="files" id="fileInput" accept=".pdf,.jpg,.jpeg,.jfif" multiple required onchange="updateInfo()">
-            <div class="note">💡 ध्यान राखोजे: आप एकसाथ पाँच फोटू या पीडीएफ लगा सको  हो!</div>
+            <div class="note">💡 ध्यान राखोजे: आप एकसाथ पाँच फोटू या पीडीएफ लगा सको हो!</div>
             
             <label style="float:left; font-weight:bold; margin-top:5px;">⚙️ किस्यो कै प्रिंट चहीजै:</label>
             <select name="print_type" id="print_type" onchange="updateInfo()">
@@ -159,7 +161,7 @@ def checkout():
                     min-height: 100vh;
                 }
                 .card { 
-                    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/prakash.jfif') no-repeat center center; 
+                    background: linear-gradient(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.9)), url('/kiosk-image/card.jpg') no-repeat center center; 
                     background-size: cover;
                     max-width: 400px; 
                     margin: auto; 
@@ -212,8 +214,53 @@ def submit_request():
         return f"<h3>एरर: {e}</h3><a href='/'>पाछा जाओ</a>"
 
 
+# 1. एडमिन लॉगिन पेज
+@app.route('/admin-login', methods=['GET', 'POST'])
+def admin_login():
+    error_msg = ""
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password == '1234':  # आप चाहें तो यहाँ '1234' की जगह अपना कोई दूसरा पासवर्ड रख सकते हैं
+            session['admin_logged_in'] = True
+            return redirect(url_for('admin_panel'))
+        else:
+            error_msg = "❌ गलत पासवर्ड! दोबारा कोशिश करें।"
+            
+    return f'''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>दुकानदार लॉगिन</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body {{ font-family: Arial, sans-serif; background: #222; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
+                .login-card {{ background: #333; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }}
+                input {{ width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; border-radius: 5px; border: none; box-sizing: border-box; }}
+                button {{ width: 100%; padding: 10px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }}
+                button:hover {{ background: #218838; }}
+                .error {{ color: #ff6b6b; font-size: 14px; margin-bottom: 10px; }}
+            </style>
+        </head>
+        <body>
+            <div class="login-card">
+                <h2>🔐 दुकानदार लॉगिन</h2>
+                <div class="error">{error_msg}</div>
+                <form method="POST">
+                    <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" required autofocus>
+                    <button type="submit">लॉगिन करें</button>
+                </form>
+            </div>
+        </body>
+        </html>
+    '''
+
+
+# 2. मुख्य एडमिन पैनल (अब इस पर पासवर्ड का ताला लग चुका है)
 @app.route('/admin-panel')
 def admin_panel():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+        
     try:
         cards_html = ""
         has_requests = "false"
@@ -284,6 +331,8 @@ def admin_panel():
             <h2>🛡️ लाइव प्रिंट रिक्वेस्ट (राजस्थानी)</h2>
             <p>पेंडिंग अप्रूवल:</p>
             {cards_html}
+            <br>
+            <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold;">🔒 लॉगआउट (बाहर निकलें)</a>
         </body>
         </html>
         '''
@@ -291,14 +340,21 @@ def admin_panel():
         return f"एडमिन पैनल एरर: {e}"
 
 
+@app.route('/admin-logout')
+def admin_logout():
+    session.pop('admin_logged_in', None)
+    return redirect(url_for('admin_login'))
+
+
 @app.route('/approve-print', methods=['POST'])
 def approve_print():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
     try:
         req_index = int(request.form.get('req_index'))
         
         if 0 <= req_index < len(pending_requests):
             req = pending_requests.pop(req_index)
-            # कतार में जोड़ देंगे ताकि लोकल एजेंट इसे प्रिंट कर सके
             print_queue.append(req)
             
             return "<h3 style='color:green; text-align:center; margin-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px;'>🎉 प्रिंट कमांड कतार में भेज दी है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
@@ -324,38 +380,5 @@ if __name__ == '__main__':
     hostname = socket.gethostname()
     local_ip = socket.gethostbyname(hostname)
     print(f"\n👉 ग्राहक लिंक: http://{local_ip}:5000")
-    print(f"👉 मोबाइल एडमिन पैनल लिंक: http://{local_ip}:5000/admin-panel\n")
-
-from flask import Flask, render_template, request, redirect, session, url_for
-
-# (बाकी पुराना कोड वैसा ही रहेगा...)
-
-# 1. एडमिन लॉगिन पेज
-@app.route('/admin-login', methods=['GET', 'POST'])
-def admin_login():
-    if request.method == 'POST':
-        password = request.form.get('password')
-        # यहाँ अपना मनपसंद पासवर्ड रख लें (जैसे '1234' या दुकान का नाम)
-        if password == '1234': 
-            session['admin_logged_in'] = True
-            return redirect(url_for('admin_panel'))
-        else:
-            return render_template('admin_login.html', error="गलत पासवर्ड! दोबारा कोशिश करें।")
-    return '''
-        <form method="POST" style="text-align:center; margin-top:100px; font-family:sans-serif;">
-            <h2>🔐 दुकानदार लॉगिन</h2>
-            <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" style="padding:10px; font-size:16px;" required>
-            <br><br>
-            <button type="submit" style="padding:10px 20px; background:green; color:white; border:none; font-size:16px; cursor:pointer;">लॉगिन करें</button>
-        </form>
-    '''
-
-# 2. मुख्य एडमिन पैनल (अब इस पर ताला लग चुका है)
-@app.route('/admin-panel')
-def admin_panel():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    # (आपका पुराना एडमिन पैनल का बाकी कोड यहाँ आ जाएगा...)
-    
+    print(f"👉 मोबाइल एडमिन पैनल लिंक: http://{local_ip}:5000/admin-panel (पासवर्ड: 1234)\n")
     app.run(host='0.0.0.0', port=5000)
