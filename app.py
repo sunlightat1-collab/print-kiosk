@@ -66,10 +66,7 @@ HTML_HOME = '''
             
             <label style="float:left; font-weight:bold; margin-top:5px;">⚙️ किस्यो कै प्रिंट चहीजै:</label>
             <select name="print_type" id="print_type" onchange="updateInfo()">
-                <option value="bw">📄 ब्लैक एंड व्हाइट (कागो-काली)</option>
-                <option value="color">🎨 कलर प्रिंट (रंगीन)</option>
-                <option value="aadhaar">🆔 आधार कार्ड प्रिंट (₹10)</option>
-                <option value="photos">🖼️ फोटो प्रिंट - (₹10 प्रति फोटो)</option>
+                <option value="bw">📄 ब्लैक एंड व्हाइट (काली)</option>             
             </select>
 
             <div class="price-box" id="priceDisplay">
