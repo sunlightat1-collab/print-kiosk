@@ -49,7 +49,6 @@ HTML_HOME = '''
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
             margin-bottom: 25px;
         }
-        /* ऐप जैसे छोटे कार्ड्स की ग्रिड */
         .app-grid {
             display: flex;
             flex-wrap: wrap;
@@ -96,19 +95,15 @@ HTML_HOME = '''
         <p style="color: #fff; margin-bottom: 20px; font-weight: bold;">कृपया अपनी सेवा चुनें:</p>
         
         <div class="app-grid">
-            <!-- 1. सेल्फ प्रिंट ऐप आइकॉन -->
             <a href="/service/print" class="app-icon-card">
                 <div class="emoji">📄</div>
                 <div class="title-text">सेल्फ प्रिंट</div>
             </a>
 
-            <!-- 2. पैन कार्ड आवेदन ऐप आइकॉन -->
             <a href="/service/pan" class="app-icon-card">
                 <div class="emoji">💳</div>
                 <div class="title-text">पैन कार्ड आवेदन</div>
             </a>
-
-            <!-- अन्य भविष्य की सेवाएँ जोड़ने के लिए यहाँ और आइकॉन बनाए जा सकते हैं -->
         </div>
     </div>
 </body>
@@ -120,7 +115,6 @@ def home():
     return render_template_string(HTML_HOME)
 
 
-# सेवा पेज (अलग-अलग साइड / फॉर्म खुलेंगे)
 @app.route('/service/<service_name>')
 def service_page(service_name):
     if service_name == 'print':
@@ -147,7 +141,7 @@ def service_page(service_name):
             <div class="note">
                 <b>📌 जरूरी दस्तावेज:</b><br>
                 1. आधार कार्ड (मुख्य पहचान)<br>
-                2. अन्य आईडी (जैसे: 10वीं मार्कशीट / वोटर आईडी / ड्राइविंग लाइसेंस आदि)
+                2. अन्य आईडी (जैसे: 10वीं मार्कशीट / वोटर आईडी आदि)
             </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="pan">
@@ -173,22 +167,22 @@ def service_page(service_name):
     else:
         return redirect(url_for('home'))
 
-    return render_template_string(f'''
+    return render_template_string('''
     <!DOCTYPE html>
     <html>
     <head>
         <title>BHUARKARKA SERVICES</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
-            body {{ 
+            body { 
                 font-family: Arial, sans-serif; 
                 background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; 
                 background-size: cover; 
                 padding: 20px; 
                 text-align: center; 
                 min-height: 100vh;
-            }}
-            .card {{ 
+            }
+            .card { 
                 background: linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)); 
                 max-width: 450px; 
                 margin: auto; 
@@ -197,20 +191,20 @@ def service_page(service_name):
                 box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
                 text-align: left;
             }
-            input[type="text"], input[type="file"], select, button {{ 
+            input[type="text"], input[type="file"], select, button { 
                 width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; 
-            }}
-            button {{ background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; }}
-            button:hover {{ background-color: #218838; }}
-            .note {{ font-size: 13px; color: #b22222; margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.5; }}
-            label {{ font-weight: bold; color: #333; font-size: 13px; }}
-            h2 {{ color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; }}
-            .back-link {{ display: block; text-align: center; margin-top: 15px; color: #007BFF; text-decoration: none; font-weight: bold; }}
+            }
+            button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; }
+            button:hover { background-color: #218838; }
+            .note { font-size: 13px; color: #b22222; margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.5; }
+            label { font-weight: bold; color: #333; font-size: 13px; }
+            h2 { color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; }
+            .back-link { display: block; text-align: center; margin-top: 15px; color: #007BFF; text-decoration: none; font-weight: bold; }
         </style>
     </head>
     <body>
         <div class="card">
-            {form_html}
+            ''' + form_html + '''
             <a href="/" class="back-link">⬅️ होम पेज पर वापस जाएं</a>
         </div>
     </body>
@@ -361,24 +355,24 @@ def admin_login():
         else:
             error_msg = "❌ गलत पासवर्ड! दोबारा कोशिश करें।"
             
-    return f'''
+    return '''
         <!DOCTYPE html>
         <html>
         <head>
             <title>दुकानदार लॉगिन</title>
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <style>
-                body {{ font-family: Arial, sans-serif; background: #222; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }}
-                .login-card {{ background: #333; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }}
-                input {{ width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; border-radius: 5px; border: none; box-sizing: border-box; }}
-                button {{ width: 100%; padding: 10px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }}
-                .error {{ color: #ff6b6b; font-size: 14px; margin-bottom: 10px; }}
+                body { font-family: Arial, sans-serif; background: #222; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+                .login-card { background: #333; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }
+                input { width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; border-radius: 5px; border: none; box-sizing: border-box; }
+                button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; }
+                .error { color: #ff6b6b; font-size: 14px; margin-bottom: 10px; }
             </style>
         </head>
         <body>
             <div class="login-card">
                 <h2>🔐 BHUARKARKA LOGIN</h2>
-                <div class="error">{error_msg}</div>
+                <div class="error">''' + error_msg + '''</div>
                 <form method="POST">
                     <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" required autofocus>
                     <button type="submit">लॉगिन करें</button>
@@ -400,13 +394,11 @@ def admin_panel():
             cards_html = "<p style='color: #ddd;'>अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</p>"
         else:
             for idx, req in enumerate(pending_requests):
-                # फाइलों के डाउनलोड लिंक बनाना
                 files_list = req['filenames'].split(',')
                 download_links = ""
                 for i, f in enumerate(files_list, 1):
                     download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:10px; text-decoration:underline;">📥 फाइल {i} डाउनलोड करें</a><br>'
 
-                # अगर पैन कार्ड है तो नाम/मोबाइल दिखेगा, प्रिंट वाले में हाइड या नॉर्मल दिखेगा
                 cust_info_block = ""
                 if req['service_type'] == 'pan':
                     cust_info_block = f'''
@@ -429,7 +421,7 @@ def admin_panel():
                     </div>
                 '''
 
-        return f'''
+        return '''
         <!DOCTYPE html>
         <html>
         <head>
@@ -437,7 +429,7 @@ def admin_panel():
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta http-equiv="refresh" content="3">
             <style>
-                body {{ 
+                body { 
                     font-family: Arial, sans-serif; 
                     background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; 
                     background-size: cover; 
@@ -445,12 +437,12 @@ def admin_panel():
                     padding: 15px; 
                     text-align: center; 
                     min-height: 100vh;
-                }}
+                }
             </style>
         </head>
         <body>
             <h2>🛡️ BHUARKARKA SERVICES - लाइव रिक्वेस्ट पैनल</h2>
-            {cards_html}
+            ''' + cards_html + '''
             <br>
             <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold;">🔒 लॉगआउट</a>
         </body>
