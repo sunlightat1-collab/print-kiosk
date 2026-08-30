@@ -57,12 +57,12 @@ HTML_HOME = '''
 </head>
 <body>
     <div class="card">
-        <h2>🖨️ खम्मा घणी सा🙏 प्रिंट कियोस्क</h2>
+        <h2>🖨️ खम्मा घणी सा🙏</h2>
         <form action="/checkout" method="POST" enctype="multipart/form-data">
             
             <label style="float:left; font-weight:bold;">📁 थारो डॉक्यूमेंट लगाओ... (ज्यादा सू ज्यादा 5):</label>
             <input type="file" name="files" id="fileInput" accept=".pdf,.jpg,.jpeg,.jfif" multiple required onchange="updateInfo()">
-            <div class="note">💡 ध्यान राखोजे: आप एकसाथ 5 फाइल तक ले सकड़ो हो!</div>
+            <div class="note">💡 ध्यान राखोजे: आप एकसाथ पाँच फोटू या पीडीएफ लगा सको  हो!</div>
             
             <label style="float:left; font-weight:bold; margin-top:5px;">⚙️ किस्यो कै प्रिंट चहीजै:</label>
             <select name="print_type" id="print_type" onchange="updateInfo()">
@@ -73,7 +73,7 @@ HTML_HOME = '''
             </select>
 
             <div class="price-box" id="priceDisplay">
-                <b>रुपया:</b> आगे बढ़ो फेर पिसा बटा स्याँ🙌
+                <b>रुपया:</b> आगे बढ़ो फेर पिसा बता स्याँ🙌
             </div>
 
             <button type="submit">🚀 आगे बड़ों</button>
