@@ -139,14 +139,15 @@ def service_page(service_name):
         form_html = '''
             <h2>💳 पैन कार्ड आवेदन</h2>
             <div class="note">
-                <b>📌 जरूरी दस्तावेज:</b><br>
-                1. आधार कार्ड (मुख्य पहचान)<br>
-                2. अन्य आईडी (जैसे: 10वीं मार्कशीट / वोटर आईडी आदि)
+                <b>📌 जरूरी नियम व दस्तावेज:</b><br>
+                1. <b>आधार कार्ड</b> (मुख्य पहचान)<br>
+                2. <b>अन्य आईडी</b> (जैसे: 10वीं मार्कशीट / वोटर आईडी आदि)<br>
+                <span style="color: #d9534f; font-weight: bold;">⚠️ ध्यान दें: अन्य दस्तावेज में दर्ज आपका नाम और विवरण पूरी तरह से आधार कार्ड के अनुसार ही होना चाहिए।</span>
             </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="pan">
                 
-                <label>👤 आवेदक का पूरा नाम:</label>
+                <label>👤 आवेदक का पूरा नाम (आधार के अनुसार):</label>
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
                 
                 <label>📱 मोबाइल नंबर:</label>
@@ -161,7 +162,14 @@ def service_page(service_name):
                 <label>📁 कॉलम 2: अन्य जरूरी आईडी अपलोड करें:</label>
                 <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.jfif" required>
 
-                <button type="submit">🚀 पैन कार्ड के लिए आगे बढ़ें</button>
+                <div style="margin: 12px 0; font-size: 13px; text-align: left;">
+                    <input type="checkbox" id="rule_check" required style="width: auto; margin-right: 8px;">
+                    <label for="rule_check" style="font-weight: normal; color: #333;">
+                        मैं पुष्टि करता/करती हूँ कि मेरे अन्य दस्तावेज में दर्ज जानकारी आधार कार्ड के अनुसार ही है।
+                    </label>
+                </div>
+
+                <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
             </form>
         '''
     else:
@@ -249,7 +257,7 @@ def checkout():
                 file.save(file_path)
                 saved_file_filenames.append(file.filename)
                 
-            amount = 30  # पैन कार्ड सेवा शुल्क
+            amount = 200  # पैन कार्ड का निर्धारित शुल्क ₹200
 
         upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
         qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
