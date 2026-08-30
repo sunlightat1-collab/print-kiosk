@@ -104,6 +104,11 @@ HTML_HOME = '''
                 <div class="emoji">💳</div>
                 <div class="title-text">पैन कार्ड आवेदन</div>
             </a>
+
+            <a href="/service/farmer" class="app-icon-card">
+                <div class="emoji">🌽</div>
+                <div class="title-text">FARMER ID</div>
+            </a>
         </div>
     </div>
 </body>
@@ -170,6 +175,42 @@ def service_page(service_name):
                 </div>
 
                 <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'farmer':
+        form_html = '''
+            <h2>🌽 FARMER ID (किसान आईडी) आवेदन</h2>
+            <div class="note">
+                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
+                1. आधार कार्ड<br>
+                2. जमाबंदी<br>
+                3. जन आधार<br>
+                <span style="color: #d9534f; font-weight: bold;">⚠️ ओटीपी (OTP) आधार कार्ड में दर्ज मोबाइल नंबर पर भेजा जाएगा।</span><br>
+                <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
+                <span style="font-size: 12px; color: #0056b3;">📞 अपनी रिक्वेस्ट की पुष्टि के लिए व्हाट्सएप नंबर <b>7610967507</b> पर कॉल या व्हाट्सएप मैसेज करें। 🙌</span>
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="farmer">
+                
+                <label>👤 किसान का पूरा नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                
+                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+
+                <label>📁 कॉलम 1: आधार कार्ड अपलोड करें:</label>
+                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+
+                <label>📁 कॉलम 2: जमाबंदी अपलोड करें:</label>
+                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+
+                <label>📁 कॉलम 3: जन आधार अपलोड करें:</label>
+                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
+
+                <button type="submit">🚀 किसान आईडी के लिए आगे बढ़ें</button>
             </form>
         '''
     else:
@@ -259,6 +300,25 @@ def checkout():
                 
             amount = 200  # पैन कार्ड का निर्धारित शुल्क ₹200
 
+        elif service_type == 'farmer':
+            cust_name = request.form.get('cust_name')
+            cust_mobile = request.form.get('cust_mobile')
+            cust_email = request.form.get('cust_email')
+            
+            file_col1 = request.files.get('file_col1')
+            file_col2 = request.files.get('file_col2')
+            file_col3 = request.files.get('file_col3')
+            
+            if not file_col1 or file_col1.filename == '' or not file_col2 or file_col2.filename == '' or not file_col3 or file_col3.filename == '':
+                return "कृपया तीनों दस्तावेज (आधार, जमाबंदी और जन आधार) अपलोड करें! <a href='/service/farmer'>वापस जाएं</a>"
+            
+            for file in [file_col1, file_col2, file_col3]:
+                file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                file.save(file_path)
+                saved_file_filenames.append(file.filename)
+                
+            amount = 50  # Farmer ID सेवा शुल्क (आवश्यकतानुसार बदला जा सकता है)
+
         upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
         qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
         filenames_string = ",".join(saved_file_filenames)
@@ -343,8 +403,8 @@ def submit_request():
 
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.95); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
-                <h2 style="color:#d9534f;">⏳ पैमेंट की सूचना दुकानदार को पहुँच गई है!</h2>
-                <p style="font-size:18px;">आपकी रिक्वेस्ट एडमिन पैनल पर भेज दी गई है। काम जल्दी ही शुरू किया जाएगा...</p>
+                <h2 style="color:#d9534f;">⏳ पेमेंट की सूचना दुकानदार को पहुँच गई है!</h2>
+                <p style="font-size:18px;">कृपया पुष्टि के लिए <b>7610967507</b> पर व्हाट्सएप मैसेज या कॉल करें।</p>
                 <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">होम पेज पर वापस जाएं</a>
             </div>
         '''
@@ -408,7 +468,7 @@ def admin_panel():
                     download_links += f'<a href="/uploads/{f.strip()}" download style="color:#00bcd4; margin-right:10px; text-decoration:underline;">📥 फाइल {i} डाउनलोड करें</a><br>'
 
                 cust_info_block = ""
-                if req['service_type'] == 'pan':
+                if req['service_type'] in ['pan', 'farmer']:
                     cust_info_block = f'''
                         <p><b>आवेदक का नाम:</b> <span style="color:#00e676; font-size:17px;">{req['cust_name']}</span></p>
                         <p><b>मोबाइल नंबर:</b> <span style="color:#ffeb3b;">{req['cust_mobile']}</span></p>
