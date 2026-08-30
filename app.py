@@ -145,6 +145,11 @@ HTML_HOME = '''
                 <div class="title-text">PAN CARD</div>
             </a>
 
+            <a href="/service/pvc_aadhar" class="app-icon-card">
+                <div class="emoji">🪪</div>
+                <div class="title-text">PVC AADHAR</div>
+            </a>
+
             <a href="/service/farmer" class="app-icon-card">
                 <div class="emoji">🌽</div>
                 <div class="title-text">FARMER ID</div>
@@ -220,6 +225,31 @@ def service_page(service_name):
                     </label>
                 </div>
                 <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'pvc_aadhar':
+        form_html = '''
+            <h2>🪪 PVC AADHAR CARD (ओरिजिनल)</h2>
+            <div class="note">
+                <b>📌 जरूरी नियम व जानकारी:</b><br>
+                1. आधार कार्ड या आधार नंबर आवश्यक।<br>
+                2. आधार कार्ड से लिंक मोबाइल नंबर पर <b>OTP</b> आएगा।<br>
+                3. यह ओरिजिनल पीवीसी कार्ड भारतीय डाक द्वारा सीधे आपके घर भेजा जाएगा।<br>
+                4. कुल शुल्क: <b>₹100</b><br>
+                <hr style="margin: 8px 0; border:0; border-top:1px dashed #ccc;">
+                <span style="font-size: 12px; color: #0056b3;">📞 सहायता के लिए व्हाट्सएप नंबर <b>7610967507</b> पर संपर्क करें। 🙌</span>
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="pvc_aadhar">
+                <label>👤 आवेदक का पूरा नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                <label>📱 मोबाइल नंबर (आधार लिंक्ड - OTP हेतु):</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+                <label>📁 आधार कार्ड अपलोड करें (या फोटो/कॉपी):</label>
+                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
             </form>
         '''
     elif service_name == 'farmer':
@@ -416,6 +446,21 @@ def checkout():
                 saved_file_filenames.append(file.filename)
                 
             amount = 200
+
+        elif service_type == 'pvc_aadhar':
+            cust_name = request.form.get('cust_name')
+            cust_mobile = request.form.get('cust_mobile')
+            cust_email = request.form.get('cust_email')
+            
+            file_col1 = request.files.get('file_col1')
+            if not file_col1 or file_col1.filename == '':
+                return "कृपया आधार दस्तावेज अपलोड करें! <a href='/service/pvc_aadhar'>वापस जाएं</a>"
+            
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], file_col1.filename)
+            file_col1.save(file_path)
+            saved_file_filenames.append(file_col1.filename)
+            
+            amount = 100
 
         elif service_type in ['farmer', 'jan_aadhaar']:
             cust_name = request.form.get('cust_name')
