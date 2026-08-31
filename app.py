@@ -291,7 +291,7 @@ def service_page(service_name):
         </html>
         ''')
     
-    # जाति और मूल निवास के लिए अलग से हैंडलिंग (बिना फीस और फॉर्म डाउनलोड सुविधा के साथ)
+    # मूल निवास प्रमाण पत्र पेज (सही नोट और सही PDF फाइल नाम Bonafide-1.pdf के साथ)
     if service_name == 'bonafide':
         return render_template_string('''
         <!DOCTYPE html>
@@ -320,10 +320,10 @@ def service_page(service_name):
                         <li>पिछले स्कूल की टीसी / अध्ययन प्रमाण पत्र</li>
                         <li>स्व-घोषणा पत्र (Form)</li>
                     </ul>
-                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ नोट: सरकारी नियमानुसार निर्धारित शुल्क लागू है। सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
+                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
                 </div>
 
-                <a href="/uploads/bonafide_form.pdf" class="btn-download" target="_blank">📥 मूल निवास फॉर्म डाउनलोड करें (PDF)</a>
+                <a href="/uploads/Bonafide-1.pdf" class="btn-download" target="_blank">📥 मूल निवास फॉर्म डाउनलोड करें (PDF)</a>
 
                 <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज पर जाएं</a>
             </div>
@@ -331,6 +331,7 @@ def service_page(service_name):
         </html>
         ''')
         
+    # जाति प्रमाण पत्र पेज (सही PDF फाइल नाम OBC-CASTE.pdf के साथ)
     if service_name == 'caste':
         return render_template_string('''
         <!DOCTYPE html>
@@ -359,10 +360,10 @@ def service_page(service_name):
                         <li>मूल निवास प्रमाण पत्र</li>
                         <li>राजपत्रित अधिकारी (Gazetted Officer) द्वारा सत्यापित आवेदन पत्र / शपथ पत्र</li>
                     </ul>
-                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ नोट: सरकारी नियमानुसार निर्धारित शुल्क लागू है। सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
+                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
                 </div>
 
-                <a href="/uploads/caste_form.pdf" class="btn-download" target="_blank">📥 जाति प्रमाण पत्र फॉर्म डाउनलोड करें (PDF)</a>
+                <a href="/uploads/OBC-CASTE.pdf" class="btn-download" target="_blank">📥 जाति प्रमाण पत्र फॉर्म डाउनलोड करें (PDF)</a>
 
                 <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज पर जाएं</a>
             </div>
