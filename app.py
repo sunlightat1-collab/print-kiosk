@@ -16,7 +16,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 
-# --- आपका नया Google Apps Script Web App URL ---
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHmjYi-XPpPe5fw96Z4IjdBsGxYKmbPuhdO-Oa0u01mkjmUM9NUcw/exec"
 
 def get_shop_status():
@@ -180,7 +179,7 @@ HTML_ADMIN = """
                             <td>
                                 {% if requests_list[i][5] and requests_list[i][5] != 'कोई फाइल नहीं' %}
                                     {% for fname in requests_list[i][5].split(',') %}
-                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline;">📁 {{ fname.strip() }}</a>
+                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline; margin-bottom:3px;">📁 {{ fname.strip() }}</a>
                                     {% endfor %}
                                 {% else %}
                                     कोई फाइल नहीं
@@ -221,7 +220,7 @@ HTML_ADMIN = """
                             <td>
                                 {% if accepted_list[i][5] and accepted_list[i][5] != 'कोई फाइल नहीं' %}
                                     {% for fname in accepted_list[i][5].split(',') %}
-                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline;">📁 {{ fname.strip() }}</a>
+                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline; margin-bottom:3px;">📁 {{ fname.strip() }}</a>
                                     {% endfor %}
                                 {% else %}
                                     कोई फाइल नहीं
@@ -266,7 +265,7 @@ def service_page(service_name):
             <h2>📄 SELF PRINT SERVICE</h2>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="print">
-                <label>📁 डॉक्यूमेंट / फाइल अपलोड करें (केवल PDF या इमेज):</label>
+                <label>📁 डॉक्यूमेंट / फाइलें अपलोड करें (एक साथ कई फाइलें चुन सकते हैं):</label>
                 <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <label>⚙️ प्रिंट प्रकार:</label>
                 <select name="print_type">
@@ -287,10 +286,8 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड अपलोड करें:</label>
-                <input type="file" name="file_aadhar" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 अन्य जरूरी आईडी अपलोड करें:</label>
-                <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 दस्तावेज अपलोड करें (एक या अधिक फाइलें चुनें):</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
             </form>
         '''
@@ -306,7 +303,7 @@ def service_page(service_name):
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
                 <label>📁 आधार कार्ड अपलोड करें:</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
             </form>
         '''
@@ -321,14 +318,8 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 फाइल 1 (आवेदन पत्र):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 2 (आधार कार्ड):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 3 (जन आधार):</label>
-                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 4 (अन्य सबूत):</label>
-                <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 सभी जरूरी दस्तावेज एक साथ चुनें (आवेदन, आधार, जन आधार आदि):</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 मूल निवास प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
         '''
@@ -343,14 +334,8 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 फाइल 1 (आवेदन पत्र):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 2 (आधार कार्ड):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 3 (जन आधार):</label>
-                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 4 (पुराना प्रमाण पत्र):</label>
-                <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 सभी जरूरी दस्तावेज एक साथ चुनें:</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 जाति प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
         '''
@@ -365,10 +350,8 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड:</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 जमाबंदी:</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 दस्तावेज अपलोड करें (आधार, जमाबंदी आदि):</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 FARMER ID के लिए आगे बढ़ें</button>
             </form>
         '''
@@ -383,10 +366,8 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड:</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 बैंक पासबुक:</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 दस्तावेज अपलोड करें:</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 SHRAMIK CARD के लिए आगे बढ़ें</button>
             </form>
         '''
@@ -401,8 +382,8 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड:</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 आधार कार्ड व अन्य दस्तावेज:</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 JAN AADHAAR के लिए आगे बढ़ें</button>
             </form>
         '''
@@ -417,8 +398,8 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड:</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 आधार कार्ड अपलोड करें:</label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <button type="submit">🚀 AYUSHMAN CARD के लिए आगे बढ़ें</button>
             </form>
         '''
@@ -459,8 +440,9 @@ def checkout():
         cust_email = request.form.get('cust_email', 'लागू नहीं')
         
         uploaded_files = []
-        for key in request.files:
-            file = request.files[key]
+        # यहाँ सभी फॉर्म्स के लिए 'files' नाम से मल्टीपल फाइलों को कैच किया गया है
+        files = request.files.getlist('files')
+        for file in files:
             if file and file.filename != '':
                 filename = file.filename
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
