@@ -244,6 +244,13 @@ HTML_ADMIN = """
             <a href="/admin/logout" class="btn btn-danger" style="padding: 10px 20px; font-size: 15px;">🔒 LOGOUT</a>
         </div>
     </div>
+
+    <!-- ऑटो-रिफ्रेश स्क्रिप्ट (हर 3 सेकंड) -->
+    <script>
+        setTimeout(function(){
+            location.reload();
+        }, 3000);
+    </script>
 </body>
 </html>
 """
