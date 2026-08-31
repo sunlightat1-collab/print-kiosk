@@ -45,13 +45,27 @@ def set_shop_notice(notice):
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    if filename.lower().endswith('.pdf'):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    # पहले uploads फोल्डर में चेक करें, अगर वहाँ न हो तो मेन रूट फोल्डर से भेजें
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    if os.path.exists(file_path):
+        if filename.lower().endswith('.pdf'):
+            return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
+        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    else:
+        # अगर फाइल मेन रूट में है
+        if os.path.exists(filename):
+            if filename.lower().endswith('.pdf'):
+                return send_from_directory('.', filename, as_attachment=True)
+            return send_from_directory('.', filename)
+    return redirect(url_for('home'))
 
 @app.route('/kiosk-image/<path:filename>')
 def kiosk_image(filename):
-    return send_from_directory('uploads', filename)
+    if os.path.exists(os.path.join('uploads', filename)):
+        return send_from_directory('uploads', filename)
+    elif os.path.exists(filename):
+        return send_from_directory('.', filename)
+    return redirect(url_for('home'))
 
 HTML_HOME = """
 <!DOCTYPE html>
