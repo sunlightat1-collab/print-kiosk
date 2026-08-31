@@ -177,12 +177,20 @@ HTML_ADMIN = """
                             <td>{{ req[0] }}</td>
                             <td>{{ req[1] }}</td>
                             <td>{{ req[3] }}</td>
-                            <td><a href="/uploads/{{ req[5] }}" target="_blank">फाइल देखें</a></td>
+                            <td>
+                                {% if req[5] and req[5] != 'कोई फाइल नहीं' %}
+                                    {% for fname in req[5].split(',') %}
+                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline;">📁 {{ fname.strip() }}</a>
+                                    {% endfor %}
+                                {% else %}
+                                    कोई फाइल नहीं
+                                {% endif %}
+                            </td>
                             <td>{{ req[6] }}</td>
                         </tr>
                         {% endfor %}
                     {% else %}
-                        <tr><td colspan="5" style="text-align:center;">अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</td></tr>
+                        <tr><td colspan="5" style="text-align:center;">अभी कोई नई सर्विस रिक्वेस्ट नहीं है या गूगल शीट से कनेक्ट नहीं हो पाया।</td></tr>
                     {% endif %}
                 </table>
             </div>
@@ -477,7 +485,10 @@ def checkout():
             "status": "Pending (पेंडिंग)"
         }
 
-        requests.post(GOOGLE_SCRIPT_URL, json=payload)
+        try:
+            requests.post(GOOGLE_SCRIPT_URL, json=payload, timeout=10)
+        except Exception as api_err:
+            print(f"Google Script Error: {api_err}")
 
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.95); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
@@ -514,11 +525,11 @@ def admin_panel():
     
     requests_list = []
     try:
-        res = requests.get(GOOGLE_SCRIPT_URL + "?action=get_data&sheetName=New")
+        res = requests.get(GOOGLE_SCRIPT_URL + "?action=get_data&sheetName=New", timeout=10)
         if res.status_code == 200:
             requests_list = res.json()
-    except:
-        pass
+    except Exception as e:
+        print(f"Fetch Error: {e}")
 
     return render_template_string(HTML_ADMIN, is_online=get_shop_status(), notice=get_shop_notice(), requests_list=requests_list)
 
@@ -540,7 +551,7 @@ def download_report(sheet_name):
         return redirect(url_for('admin_panel'))
     
     try:
-        res = requests.get(GOOGLE_SCRIPT_URL + f"?action=get_data&sheetName={sheet_name}")
+        res = requests.get(GOOGLE_SCRIPT_URL + f"?action=get_data&sheetName={sheet_name}", timeout=10)
         data = res.json() if res.status_code == 200 else []
         
         output = io.StringIO()
