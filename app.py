@@ -11,6 +11,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 STATUS_FILE = 'shop_status.txt'
+NOTICE_FILE = 'shop_notice.txt'
 
 def get_shop_status():
     if not os.path.exists(STATUS_FILE):
@@ -21,6 +22,16 @@ def get_shop_status():
 def set_shop_status(status):
     with open(STATUS_FILE, 'w') as f:
         f.write('ON' if status else 'OFF')
+
+def get_shop_notice():
+    if not os.path.exists(NOTICE_FILE):
+        return "🙏 BHUARKARKA SERVICES में आपका स्वागत है! सभी प्रकार के ऑनलाइन फॉर्म व प्रिंटिंग यहाँ उपलब्ध हैं।"
+    with open(NOTICE_FILE, 'r', encoding='utf-8') as f:
+        return f.read().strip()
+
+def set_shop_notice(notice):
+    with open(NOTICE_FILE, 'w', encoding='utf-8') as f:
+        f.write(notice)
 
 UPI_ID = "Q508475385@ybl"
 MERCHANT_NAME = "BHUARKARKA SERVICES"
@@ -60,8 +71,21 @@ HTML_HOME = '''
             font-family: 'Britannic Bold', Arial, sans-serif;
             color: white;
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-            margin-bottom: 15px;
+            margin-bottom: 10px;
             letter-spacing: 1px;
+        }
+        .notice-banner {
+            background: rgba(255, 193, 7, 0.95);
+            color: #333;
+            padding: 10px 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            border: 1px dashed #d39e00;
+            text-align: center;
+            animation: fadeIn 0.5s;
         }
         .shop-status {
             display: inline-flex;
@@ -72,7 +96,7 @@ HTML_HOME = '''
             color: white;
             font-weight: bold;
             font-size: 14px;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
             border: 1px solid rgba(255,255,255,0.2);
             font-family: 'Britannic Bold', Arial, sans-serif;
@@ -159,6 +183,7 @@ HTML_HOME = '''
                 } else {
                     statusDiv.innerHTML = '<span class="status-dot-offline"></span> दुकान बंद है (OFFLINE)';
                 }
+                document.getElementById('notice-banner-container').innerText = data.notice;
             });
         }, 3000);
     </script>
@@ -167,6 +192,10 @@ HTML_HOME = '''
     <div class="container">
         <h1>🖨️ BHUARKARKA SERVICES 🙏</h1>
         
+        <div class="notice-banner" id="notice-banner-container">
+            📢 {{ notice }}
+        </div>
+
         <div class="shop-status" id="shop-status-container">
             {% if is_online %}
                 <span class="status-dot-online"></span> दुकान खुली है (ONLINE)
@@ -220,14 +249,20 @@ HTML_HOME = '''
 </html>
 '''
 
+ALLOWED_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.jfif'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in [ext.replace('.', '') for ext in ALLOWED_EXTENSIONS]
+
 @app.route('/check-status')
 def check_status():
-    return {'is_online': get_shop_status()}
+    return {'is_online': get_shop_status(), 'notice': get_shop_notice()}
 
 @app.route('/')
 def home():
     is_online = get_shop_status()
-    return render_template_string(HTML_HOME, is_online=is_online)
+    notice = get_shop_notice()
+    return render_template_string(HTML_HOME, is_online=is_online, notice=notice)
 
 @app.route('/service/<service_name>')
 def service_page(service_name):
@@ -239,7 +274,7 @@ def service_page(service_name):
             <h2>📄 SELF PRINT SERVICE</h2>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="print">
-                <label>📁 डॉक्यूमेंट / फाइल अपलोड करें:</label>
+                <label>📁 डॉक्यूमेंट / फाइल अपलोड करें (केवल PDF या इमेज):</label>
                 <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 <label>⚙️ प्रिंट प्रकार:</label>
                 <select name="print_type">
@@ -266,9 +301,9 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 कॉलम 1: आधार कार्ड अपलोड करें:</label>
+                <label>📁 कॉलम 1: आधार कार्ड अपलोड करें (PDF/Image):</label>
                 <input type="file" name="file_aadhar" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 कॉलम 2: अन्य जरूरी आईडी अपलोड करें:</label>
+                <label>📁 कॉलम 2: अन्य जरूरी आईडी अपलोड करें (PDF/Image):</label>
                 <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
             </form>
@@ -290,7 +325,7 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड अपलोड करें:</label>
+                <label>📁 आधार कार्ड अपलोड करें (PDF/Image):</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
             </form>
@@ -496,6 +531,8 @@ def checkout():
                 return "कोई फाइल नहीं चुनी गई! <a href='/service/print'>वापस जाएं</a>"
             for file in uploaded_files:
                 if file and file.filename != '':
+                    if not allowed_file(file.filename):
+                        return "<h3>त्रुटि: अमान्य फाइल फॉर्मेट! आप केवल PDF या इमेज फाइल ही अपलोड कर सकते हैं। वीडियो या अन्य फाइल प्रतिबंधित हैं।</h3><a href='/service/print'>वापस जाएं</a>"
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                     file.save(file_path)
                     saved_file_filenames.append(file.filename)
@@ -512,6 +549,8 @@ def checkout():
             
             for file in files_to_check:
                 if file and file.filename != '':
+                    if not allowed_file(file.filename):
+                        return "<h3>त्रुटि: अमान्य फाइल फॉर्मेट! आप केवल PDF या इमेज फाइल ही अपलोड कर सकते हैं। वीडियो या अन्य फाइल प्रतिबंधित हैं।</h3><a href='/'>वापस जाएं</a>"
                     file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
                     file.save(file_path)
                     saved_file_filenames.append(file.filename)
@@ -631,6 +670,7 @@ def admin_panel():
         is_current_online = get_shop_status()
         status_btn_text = "🔴 दुकान बंद करें (OFFLINE)" if is_current_online else "🟢 दुकान चालू करें (ONLINE)"
         status_btn_color = "#d9534f" if is_current_online else "#28a745"
+        current_notice = get_shop_notice()
 
         cards_html = ""
         if not pending_requests:
@@ -668,24 +708,33 @@ def admin_panel():
         <head>
             <title>BHUARKARKA - एडमिन पैनल</title>
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <meta http-equiv="refresh" content="3">
             <style>
                 body {{ font-family: Arial, sans-serif; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; background-size: cover; color: #fff; padding: 15px; text-align: center; min-height: 100vh; }}
                 h2 {{ font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 1px; }}
                 .requests-container {{ display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; margin-top: 20px; }}
-                .status-control-box {{ background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; max-width: 350px; margin: 10px auto; border: 1px solid #555; }}
+                .control-box {{ background: rgba(0,0,0,0.85); padding: 15px; border-radius: 10px; max-width: 400px; margin: 10px auto; border: 1px solid #555; text-align: left; }}
+                textarea {{ width: 100%; height: 70px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-family: Arial; font-size: 14px; margin-top: 5px; }}
             </style>
         </head>
         <body>
             <h2>🛡️ BHUARKARKA SERVICES - LIVE REQUEST PANEL</h2>
             
-            <div class="status-control-box">
-                <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold;">दुकान की स्थिति बदलें:</p>
+            <div class="control-box">
+                <p style="margin:0 0 8px 0; font-size:14px; font-weight:bold;">🟢 दुकान की स्थिति बदलें:</p>
                 <form action="/toggle-status" method="POST">
-                    <button type="submit" style="background: {status_btn_color}; color: white; border: none; padding: 10px 20px; font-size: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-family:'Britannic Bold', Arial, sans-serif;">{status_btn_text}</button>
+                    <button type="submit" style="background: {status_btn_color}; color: white; border: none; padding: 10px; font-size: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-family:'Britannic Bold', Arial, sans-serif;">{status_btn_text}</button>
                 </form>
             </div>
 
+            <div class="control-box">
+                <p style="margin:0 0 5px 0; font-size:14px; font-weight:bold;">📢 होमपेज पर आवश्यक नोट/संदेश अपडेट करें:</p>
+                <form action="/update-notice" method="POST">
+                    <textarea name="notice_text" required>{current_notice}</textarea>
+                    <button type="submit" style="background: #007BFF; color: white; border: none; padding: 8px; font-size: 14px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 8px; font-family:'Britannic Bold', Arial, sans-serif;">💾 नोट सेव करें व लाइव करें</button>
+                </form>
+            </div>
+
+            <h3 style="margin-top: 30px; font-family:'Britannic Bold', Arial, sans-serif;">📥 ग्राहक पेंडिंग रिक्वेस्ट</h3>
             <div class="requests-container">{cards_html}</div>
             <br><br>
             <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold; display: inline-block; font-family:'Britannic Bold', Arial, sans-serif;">🔒 LOGOUT</a>
@@ -703,10 +752,23 @@ def toggle_status():
     set_shop_status(not current_status)
     return redirect(url_for('admin_panel'))
 
+@app.route('/update-notice', methods=['POST'])
+def update_notice():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    new_notice = request.form.get('notice_text')
+    if new_notice:
+        set_shop_notice(new_notice)
+    return redirect(url_for('admin_panel'))
+
 @app.route('/admin-logout')
 def admin_logout():
     session.pop('admin_logged_in', None)
     return redirect(url_for('admin_login'))
+
+@app.raise_not_found
+def handle_404(e):
+    return redirect(url_for('home'))
 
 @app.route('/approve-print', methods=['POST'])
 def approve_print():
