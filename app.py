@@ -194,6 +194,10 @@ HTML_HOME = '''
                 <div class="emoji">📜</div>
                 <div class="title-text">मूल निवास प्रमाण पत्र</div>
             </a>
+            <a href="/service/caste" class="app-icon-card">
+                <div class="emoji">📑</div>
+                <div class="title-text">जाति प्रमाण पत्र</div>
+            </a>
             <a href="/service/farmer" class="app-icon-card">
                 <div class="emoji">🌽</div>
                 <div class="title-text">FARMER ID</div>
@@ -321,6 +325,40 @@ def service_page(service_name):
                 <label>📁 फाइल 4: पिता का पहचान पत्र व वोटर लिस्ट सबूत:</label>
                 <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 मूल निवास प्रमाण पत्र हेतु आगे बढ़ें</button>
+            </form>
+        '''
+    elif service_name == 'caste':
+        form_html = '''
+            <h2>📑 जाति प्रमाण पत्र (Caste Certificate)</h2>
+            <div class="note">
+                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
+                1. आवेदक का आधार कार्ड एवं पिता का आधार कार्ड<br>
+                2. जन आधार कार्ड एवं राशन कार्ड<br>
+                3. पिता का पहचान पत्र (Voter ID)<br>
+                4. पुराना जाति प्रमाण पत्र या जाति प्रूफ (न होने पर सक्षम अधिकारी से रिपोर्ट)<br>
+                5. 1993 या 1980 की वोटर लिस्ट, फॉर्म-16 (यदि लागू हो)<br>
+                6. नीचे दिए गए लिंक से **जाति प्रमाण पत्र आवेदन फॉर्म** डाउनलोड करें, **2 उत्तरदायी गवाहों के हस्ताक्षर** करवाएं और **पटवारी रिपोर्ट** करवाना सुनिश्चित करें:<br>
+                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
+                    📥 <a href="https://raw.githubusercontent.com/sunlightat1-collab/print-kiosk/main/OBC-CASTE.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">जाति प्रमाण पत्र आवेदन फॉर्म (PDF) डाउनलोड करें</a>
+                </div>
+            </div>
+            <form action="/checkout" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="service_type" value="caste">
+                <label>👤 आवेदक का पूरा नाम:</label>
+                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
+                <label>📱 मोबाइल नंबर:</label>
+                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
+                <label>📧 जीमेल (Gmail) पता:</label>
+                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
+                <label>📁 फाइल 1: भरा हुआ जाति आवेदन पत्र (गवाह व पटवारी रिपोर्ट सहित):</label>
+                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 फाइल 2: स्वयं व पिता का आधार कार्ड:</label>
+                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 फाइल 3: जन आधार व राशन कार्ड:</label>
+                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <label>📁 फाइल 4: पिता का वोटर आईडी व पुराना जाति प्रमाण पत्र / वोटर लिस्ट (1993/1980):</label>
+                <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
+                <button type="submit">🚀 जाति प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
         '''
     elif service_name == 'farmer':
@@ -480,7 +518,7 @@ def checkout():
 
             if service_type == 'pan': amount = 200
             elif service_type == 'pvc_aadhar': amount = 100
-            elif service_type == 'bonafide': amount = 50
+            elif service_type in ['bonafide', 'caste']: amount = 50
             elif service_type in ['farmer', 'jan_aadhaar']: amount = 50
             else: amount = 40
 
