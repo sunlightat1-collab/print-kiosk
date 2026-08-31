@@ -294,15 +294,15 @@ def service_page(service_name):
     
     # बाकी सभी सर्विसेज के लिए फीस तय की गई है
     fees_mapping = {
-        'pan': ('PAN Card Application', 200),
-        'pvc_aadhar': ('PVC Aadhar Card', 100),
-        'bonafide': ('मूल निवास प्रमाण पत्र', 200),
-        'caste': ('जाति प्रमाण पत्र', 200),
-        'farmer': ('Farmer ID', 100),
-        'shramik': ('Shramik Card', 200),
-        'jan_aadhaar': ('Jan Aadhar Card', 50),
-        'jan_aadhaar_pvc': ('Jan Aadhar PVC Card', 100),
-        'ayushman': ('Ayushman Card', 100)
+        'pan': ('PAN Card Application', ),
+        'pvc_aadhar': ('PVC Aadhar Card', ),
+        'bonafide': ('मूल निवास प्रमाण पत्र', ),
+        'caste': ('जाति प्रमाण पत्र', ),
+        'farmer': ('Farmer ID', ),
+        'shramik': ('Shramik Card', ),
+        'jan_aadhaar': ('Jan Aadhar Card', ),
+        'jan_aadhaar_pvc': ('Jan Aadhar PVC Card', ),
+        'ayushman': ('Ayushman Card', )
     }
     
     if service_name not in fees_mapping:
