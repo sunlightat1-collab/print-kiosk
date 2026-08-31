@@ -12,10 +12,9 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 STATUS_FILE = 'shop_status.txt'
 
-# दुकान/प्रिंटर की स्थिति चेक करने का फंक्शन
 def get_shop_status():
     if not os.path.exists(STATUS_FILE):
-        return True # डिफ़ॉल्ट रूप से खुली रहेगी
+        return True
     with open(STATUS_FILE, 'r') as f:
         return f.read().strip() == 'ON'
 
@@ -149,7 +148,6 @@ HTML_HOME = '''
             letter-spacing: 0.5px;
         }
     </style>
-    <!-- लाइव स्टेटस अपडेट स्क्रिप्ट -->
     <script>
         setInterval(function() {
             fetch('/check-status')
@@ -227,10 +225,8 @@ def home():
     is_online = get_shop_status()
     return render_template_string(HTML_HOME, is_online=is_online)
 
-
 @app.route('/service/<service_name>')
 def service_page(service_name):
-    # यदि दुकान ऑफलाइन है, तो सेवा पेज पर जाने से रोकें और होम पेज पर भेज दें
     if not get_shop_status():
         return redirect(url_for('home'))
 
@@ -295,7 +291,7 @@ def service_page(service_name):
                 <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
             </form>
         '''
-   elif service_name == 'bonafide':
+    elif service_name == 'bonafide':
         form_html = '''
             <h2>📜 मूल निवास प्रमाण पत्र (Bonafide)</h2>
             <div class="note">
@@ -327,7 +323,6 @@ def service_page(service_name):
                 <button type="submit">🚀 मूल निवास प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
         '''
-        
     elif service_name == 'farmer':
         form_html = '''
             <h2>🌽 FARMER ID APPLICATION</h2>
@@ -449,7 +444,6 @@ def service_page(service_name):
     </html>
     ''')
 
-
 @app.route('/checkout', methods=['POST'])
 def checkout():
     if not get_shop_status():
@@ -529,7 +523,6 @@ def checkout():
     except Exception as e:
         return f"<h3>त्रुटि: {e}</h3><a href='/'>होम पेज जाएं</a>"
 
-
 @app.route('/submit-request', methods=['POST'])
 def submit_request():
     try:
@@ -552,7 +545,6 @@ def submit_request():
         '''
     except Exception as e:
         return f"<h3>एरर: {e}</h3><a href='/'>वापस जाएं</a>"
-
 
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
@@ -591,7 +583,6 @@ def admin_login():
         </body>
         </html>
     '''
-
 
 @app.route('/admin-panel')
 def admin_panel():
@@ -650,7 +641,6 @@ def admin_panel():
         <body>
             <h2>🛡️ BHUARKARKA SERVICES - LIVE REQUEST PANEL</h2>
             
-            <!-- दुकान चालू/बंद करने का स्विच बटन -->
             <div class="status-control-box">
                 <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold;">दुकान की स्थिति बदलें:</p>
                 <form action="/toggle-status" method="POST">
@@ -667,7 +657,6 @@ def admin_panel():
     except Exception as e:
         return f"एडमिन पैनल एरर: {e}"
 
-
 @app.route('/toggle-status', methods=['POST'])
 def toggle_status():
     if not session.get('admin_logged_in'):
@@ -676,12 +665,10 @@ def toggle_status():
     set_shop_status(not current_status)
     return redirect(url_for('admin_panel'))
 
-
 @app.route('/admin-logout')
 def admin_logout():
     session.pop('admin_logged_in', None)
     return redirect(url_for('admin_login'))
-
 
 @app.route('/approve-print', methods=['POST'])
 def approve_print():
@@ -695,7 +682,6 @@ def approve_print():
         return "रिक्वेस्ट पहले ही हटाई जा चुकी है! <a href='/admin-panel'>पाछा जाओ</a>"
     except Exception as e:
         return f"<h3>एरर: {e}</h3><a href='/admin-panel'>पाछा जाओ</a>"
-
 
 if __name__ == '__main__':
     hostname = socket.gethostname()
