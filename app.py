@@ -17,7 +17,6 @@ STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 
 # --- Google Apps Script Web App URL ---
-# --- Google Apps Script Web App URL ---
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycorSHkfBkBTXyOCWzj5wm9yz7l7d4vSYCAAtZUFicYqp09paRVAR4u0b_SDa6Exrnfw/exec"
 
 def get_shop_status():
