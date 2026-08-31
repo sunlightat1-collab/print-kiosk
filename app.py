@@ -2,6 +2,8 @@ from flask import Flask, request, render_template_string, send_from_directory, r
 import os
 import socket
 import time
+import threading
+import urllib.request
 
 app = Flask(__name__)
 app.secret_key = 'prakash_print_kiosk_secret_key'
@@ -16,8 +18,14 @@ MERCHANT_NAME = "BHUARKARKA SERVICES"
 
 pending_requests = []
 
-# दुकान की ऑनलाइन/ऑफलाइन स्थिति ट्रैक करने के लिए वेरिएबल
-last_admin_ping = 0
+# असली इंटरनेट कनेक्शन चेक करने वाला फंक्शन
+def check_real_internet():
+    try:
+        # गूगल या किसी भरोसेमंद वेबसाइट से कनेक्ट करके देखता है कि नेट चालू है या नहीं
+        urllib.request.urlopen('https://www.google.com', timeout=3)
+        return True
+    except:
+        return False
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
@@ -28,13 +36,6 @@ def uploaded_file(filename):
 @app.route('/kiosk-image/<path:filename>')
 def kiosk_image(filename):
     return send_from_directory('uploads', filename)
-
-# कंप्यूटर से पिंग (सिग्नल) लेने के लिए नया रूट
-@app.route('/admin-ping', methods=['POST'])
-def admin_ping():
-    global last_admin_ping
-    last_admin_ping = time.time()
-    return "OK"
 
 HTML_HOME = '''
 <!DOCTYPE html>
@@ -213,17 +214,13 @@ HTML_HOME = '''
 
 @app.route('/check-status')
 def check_status():
-    global last_admin_ping
-    current_time = time.time()
-    # अगर पिछले 15 सेकंड के अंदर कंप्यूटर से पिंग आया है, तो ऑनलाइन मानेंगे
-    is_online = (current_time - last_admin_ping) < 15
+    # यह फंक्शन असली इंटरनेट कनेक्शन की जाँच करेगा
+    is_online = check_real_internet()
     return {'is_online': is_online}
 
 @app.route('/')
 def home():
-    global last_admin_ping
-    current_time = time.time()
-    is_online = (current_time - last_admin_ping) < 15
+    is_online = check_real_internet()
     return render_template_string(HTML_HOME, is_online=is_online)
 
 
@@ -633,14 +630,6 @@ def admin_panel():
                 h2 { font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 1px; }
                 .requests-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; margin-top: 20px; }
             </style>
-            <!-- यह स्क्रिप्ट कंप्यूटर के चालू होने का सिग्नल सर्वर को भेजती रहेगी -->
-            <script>
-                function sendPing() {
-                    fetch('/admin-ping', { method: 'POST' });
-                }
-                setInterval(sendPing, 4000); // हर 4 सेकंड में पिंग भेजेगा
-                window.onload = sendPing;
-            </script>
         </head>
         <body>
             <h2>🛡️ BHUARKARKA SERVICES - LIVE REQUEST PANEL</h2>
