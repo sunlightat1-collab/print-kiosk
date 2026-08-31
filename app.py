@@ -97,8 +97,8 @@ HTML_HOME = """
             <a href="/service/print" class="app-icon-card"><div class="emoji">📄</div><div class="title-text">SELF PRINT</div></a>
             <a href="/service/pan" class="app-icon-card"><div class="emoji">💳</div><div class="title-text">PAN CARD (₹200)</div></a>
             <a href="/service/pvc_aadhar" class="app-icon-card"><div class="emoji">🪪</div><div class="title-text">PVC AADHAR (₹100)</div></a>
-            <a href="/service/bonafide" class="app-icon-card"><div class="emoji">📜</div><div class="title-text">मूल निवास (₹200)</div></a>
-            <a href="/service/caste" class="app-icon-card"><div class="emoji">📑</div><div class="title-text">जाति प्रमाण पत्र (₹200)</div></a>
+            <a href="/service/bonafide" class="app-icon-card"><div class="emoji">📜</div><div class="title-text">मूल निवास प्रमाण पत्र</div></a>
+            <a href="/service/caste" class="app-icon-card"><div class="emoji">📑</div><div class="title-text">जाति प्रमाण पत्र</div></a>
             <a href="/service/farmer" class="app-icon-card"><div class="emoji">🌽</div><div class="title-text">FARMER ID (₹100)</div></a>
             <a href="/service/shramik" class="app-icon-card"><div class="emoji">👷</div><div class="title-text">SHRAMIK CARD (₹200)</div></a>
             <a href="/service/jan_aadhaar" class="app-icon-card"><div class="emoji">🆔</div><div class="title-text">JAN AADHAAR (₹50)</div></a>
@@ -291,11 +291,88 @@ def service_page(service_name):
         </html>
         ''')
     
+    # जाति और मूल निवास के लिए अलग से हैंडलिंग (बिना फीस और फॉर्म डाउनलोड सुविधा के साथ)
+    if service_name == 'bonafide':
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>मूल निवास प्रमाण पत्र</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; text-align: center; }
+                .card { max-width: 440px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: left; }
+                .info-box { background: #eef9ff; border: 1px solid #bce8f1; padding: 12px; border-radius: 5px; font-size: 13px; margin-bottom: 15px; color: #31708f; line-height: 1.5; }
+                .btn-download { display: block; background: #2980b9; color: white; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; border-radius: 5px; margin-bottom: 15px; }
+                .btn-download:hover { background: #2471a3; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2 style="color: #2c3e50; text-align: center; margin-top:0;">📜 मूल निवास प्रमाण पत्र</h2>
+                
+                <div class="info-box">
+                    <b>📌 नियम व जरूरी दस्तावेज़:</b>
+                    <ul style="padding-left:15px; margin:5px 0;">
+                        <li>आधार कार्ड (आवेदक व पिता का)</li>
+                        <li>जन आधार कार्ड</li>
+                        <li>राशन कार्ड या बिजली बिल (निवास प्रमाण)</li>
+                        <li>पिछले स्कूल की टीसी / अध्ययन प्रमाण पत्र</li>
+                        <li>स्व-घोषणा पत्र (Form)</li>
+                    </ul>
+                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ नोट: सरकारी नियमानुसार निर्धारित शुल्क लागू है। सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
+                </div>
+
+                <a href="/uploads/bonafide_form.pdf" class="btn-download" target="_blank">📥 मूल निवास फॉर्म डाउनलोड करें (PDF)</a>
+
+                <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज पर जाएं</a>
+            </div>
+        </body>
+        </html>
+        ''')
+        
+    if service_name == 'caste':
+        return render_template_string('''
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>जाति प्रमाण पत्र</title>
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <style>
+                body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; text-align: center; }
+                .card { max-width: 440px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: left; }
+                .info-box { background: #eef9ff; border: 1px solid #bce8f1; padding: 12px; border-radius: 5px; font-size: 13px; margin-bottom: 15px; color: #31708f; line-height: 1.5; }
+                .btn-download { display: block; background: #2980b9; color: white; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; border-radius: 5px; margin-bottom: 15px; }
+                .btn-download:hover { background: #2471a3; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h2 style="color: #2c3e50; text-align: center; margin-top:0;">📑 जाति प्रमाण पत्र</h2>
+                
+                <div class="info-box">
+                    <b>📌 नियम व जरूरी दस्तावेज़:</b>
+                    <ul style="padding-left:15px; margin:5px 0;">
+                        <li>आधार कार्ड</li>
+                        <li>जन आधार कार्ड</li>
+                        <li>पिता या परिवार के किसी सदस्य का पुराना जाति प्रमाण पत्र</li>
+                        <li>मूल निवास प्रमाण पत्र</li>
+                        <li>राजपत्रित अधिकारी (Gazetted Officer) द्वारा सत्यापित आवेदन पत्र / शपथ पत्र</li>
+                    </ul>
+                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ नोट: सरकारी नियमानुसार निर्धारित शुल्क लागू है। सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
+                </div>
+
+                <a href="/uploads/caste_form.pdf" class="btn-download" target="_blank">📥 जाति प्रमाण पत्र फॉर्म डाउनलोड करें (PDF)</a>
+
+                <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज पर जाएं</a>
+            </div>
+        </body>
+        </html>
+        ''')
+
     fees_mapping = {
         'pan': ('PAN Card Application', 200, True),
         'pvc_aadhar': ('PVC Aadhar Card', 100, True),
-        'bonafide': ('मूल निवास प्रमाण पत्र', 200, False),  
-        'caste': ('जाति प्रमाण पत्र', 200, False),      
         'farmer': ('Farmer ID', 100, True),
         'shramik': ('Shramik Card', 200, True),
         'jan_aadhaar': ('Jan Aadhar Card', 50, True),
@@ -307,46 +384,6 @@ def service_page(service_name):
         return redirect(url_for('home'))
         
     s_title, s_fee, has_file_upload = fees_mapping[service_name]
-    
-    # यदि जाति या मूल निवास है, तो नियम, दस्तावेज और ई-मित्र का निर्देश दिखाएं
-    if service_name in ['bonafide', 'caste']:
-        if service_name == 'bonafide':
-            doc_info = """
-            <div style="background:#eef9ff; border:1px solid #bce8f1; padding:10px; border-radius:5px; font-size:12px; margin-bottom:12px; color:#31708f;">
-                <b>📜 मूल निवास प्रमाण पत्र के लिए जरूरी दस्तावेज़ व नियम:</b>
-                <ul style="padding-left:15px; margin:5px 0;">
-                    <li>आधार कार्ड (आवेदक व पिता का)</li>
-                    <li>जन आधार कार्ड</li>
-                    <li>राशन कार्ड या बिजली बिल (निवास प्रमाण)</li>
-                    <li>पिछले स्कूल की टीसी / अध्ययन प्रमाण पत्र</li>
-                    <li>स्व-घोषणा पत्र (Form)</li>
-                </ul>
-                <p style="margin:5px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ नोट: सभी दस्तावेज़ एवं फॉर्म नजदीकी ई-मित्र से ऑनलाइन आवेदन करें।</p>
-            </div>
-            """
-        else:
-            doc_info = """
-            <div style="background:#eef9ff; border:1px solid #bce8f1; padding:10px; border-radius:5px; font-size:12px; margin-bottom:12px; color:#31708f;">
-                <b>📑 जाति प्रमाण पत्र के लिए जरूरी दस्तावेज़ व नियम:</b>
-                <ul style="padding-left:15px; margin:5px 0;">
-                    <li>आधार कार्ड</li>
-                    <li>जन आधार कार्ड</li>
-                    <li>पिता या परिवार के किसी सदस्य का पुराना जाति प्रमाण पत्र</li>
-                    <li>मूल निवास प्रमाण पत्र</li>
-                    <li>राजपत्रित अधिकारी (Gazetted Officer) द्वारा सत्यापित आवेदन पत्र / शपथ पत्र</li>
-                </ul>
-                <p style="margin:5px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ नोट: सभी दस्तावेज़ एवं फॉर्म नजदीकी ई-मित्र से ऑनलाइन आवेदन करें।</p>
-            </div>
-            """
-        file_section = f'''
-            {doc_info}
-            <input type="hidden" name="no_file_note" value="ई-मित्र पर संपर्क करें (नियम व दस्तावेज देखे गए)">
-        '''
-    else:
-        file_section = '''
-            <label><b>दस्तावेज अपलोड करें (मल्टीपल फाइलें):</b></label>
-            <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-        '''
     
     return render_template_string(f'''
     <!DOCTYPE html>
@@ -379,7 +416,8 @@ def service_page(service_name):
                 <label><b>जीमेल (Email):</b></label>
                 <input type="text" name="cust_email" placeholder="email@gmail.com" required>
                 
-                {file_section}
+                <label><b>दस्तावेज अपलोड करें (मल्टीपल फाइलें):</b></label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 
                 <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
                 
