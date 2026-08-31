@@ -294,9 +294,9 @@ def service_page(service_name):
                 1. आधार स्वयं एवं पिता का आधार<br>
                 2. जन आधार एवं राशन कार्ड<br>
                 3. पिता का पहचान पत्र / वोटर लिस्ट<br>
-                4. नीचे दिए गए लिंक से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर गवाहों से सत्यापित करवाएं:<br>
-                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
-                    📥 <a href="/uploads/Bonafide-1.pdf" style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
+                4. नीचे दिए गए बटन से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर गवाहों से सत्यापित करवाएं:<br>
+                <div style="margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 2px dashed #007BFF;">
+                    <a href="/uploads/Bonafide-1.pdf" download="Bonafide-1.pdf" style="display: inline-block; background: #007BFF; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; text-decoration: none; font-size: 14px;">📥 मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
                 </div>
             </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
