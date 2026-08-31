@@ -85,7 +85,7 @@ HTML_HOME = '''
             {% if is_online %}
                 <span class="status-dot-online"></span> दुकान खुली है (ONLINE)
             {% else %}
-                <span class="status-dot-offline"></span> दुकान बंद है (OFFLINE)
+                <span class="status-dot-offline"></span> दुकान बंद है (OFFLINE - आप फॉर्म भेज सकते हैं)
             {% endif %}
         </div>
         <p style="color: #fff; margin-bottom: 20px; font-weight: bold;">कृपया अपनी सेवा चुनें:</p>
@@ -132,14 +132,15 @@ HTML_ADMIN = '''
         <h2>🛡️ BHUARKARKA SERVICES - ADMIN PANEL 🛡️</h2>
         
         <div class="card">
-            <h3> दुकान की स्थिति बदलें:</h3>
+            <h3>🎛️ दुकान का स्टेटस (Indicator):</h3>
             {% if is_online %}
                 <p style="color: #2ecc71; font-weight: bold;">स्थिति: खुली है (ONLINE)</p>
-                <a href="/admin/toggle-status" class="btn btn-danger">🔴 दुकान बंद करें (OFFLINE)</a>
+                <a href="/admin/toggle-status" class="btn btn-danger">🔴 इसे बंद (OFFLINE) दिखाएं</a>
             {% else %}
                 <p style="color: #e74c3c; font-weight: bold;">स्थिति: बंद है (OFFLINE)</p>
-                <a href="/admin/toggle-status" class="btn">🟢 दुकान चालू करें (ONLINE)</a>
+                <a href="/admin/toggle-status" class="btn">🟢 इसे चालू (ONLINE) दिखाएं</a>
             {% endif %}
+            <p style="font-size: 12px; color: #ccc; margin-top: 8px;">*नोट: स्टेटस चाहे बंद हो या चालू, ग्राहक हमेशा फॉर्म भर सकेंगे। यह सिर्फ एक इंडिकेटर है।</p>
         </div>
 
         <div class="card">
@@ -203,15 +204,7 @@ def home():
 
 @app.route('/service/<service_name>')
 def service_page(service_name):
-    if not get_shop_status():
-        return '''
-            <div style="text-align:center; font-family:Arial; margin-top:50px; padding:30px; background:#fff; max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.3);">
-                <h2 style="color:#d9534f;">❌ दुकान अभी बंद है!</h2>
-                <p>फिलहाल यह सेवा उपलब्ध नहीं है। कृपया दुकान खुलने का इंतजार करें।</p>
-                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">मुख्य पृष्ठ पर जाएं</a>
-            </div>
-        '''
-    
+    # दुकान बंद हो या चालू, अब हर हाल में फॉर्म खुलेगा (इंडिकेटर मोड)
     return f'''
     <!DOCTYPE html>
     <html>
