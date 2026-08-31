@@ -12,7 +12,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 STATUS_FILE = 'shop_status.txt'
 
-# दुकान की स्थिति चेक करने का फंक्शन
+# दुकान/प्रिंटर की स्थिति चेक करने का फंक्शन
 def get_shop_status():
     if not os.path.exists(STATUS_FILE):
         return True # डिफ़ॉल्ट रूप से खुली रहेगी
@@ -92,17 +92,22 @@ HTML_HOME = '''
         .status-dot-offline {
             height: 12px;
             width: 12px;
-            background-color: #222222;
+            background-color: #d9534f;
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
-            border: 1px solid #555;
-            box-shadow: 0 0 5px rgba(0,0,0,0.8);
+            box-shadow: 0 0 8px #d9534f;
+            animation: pulse-offline 1.5s infinite;
         }
         @keyframes pulse-online {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
             70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+        }
+        @keyframes pulse-offline {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(217, 83, 79, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); }
         }
         .app-grid {
             display: flex;
@@ -225,6 +230,10 @@ def home():
 
 @app.route('/service/<service_name>')
 def service_page(service_name):
+    # यदि दुकान ऑफलाइन है, तो सेवा पेज पर जाने से रोकें और होम पेज पर भेज दें
+    if not get_shop_status():
+        return redirect(url_for('home'))
+
     if service_name == 'print':
         form_html = '''
             <h2>📄 SELF PRINT SERVICE</h2>
@@ -294,9 +303,9 @@ def service_page(service_name):
                 1. आधार स्वयं एवं पिता का आधार<br>
                 2. जन आधार एवं राशन कार्ड<br>
                 3. पिता का पहचान पत्र / वोटर लिस्ट<br>
-                4. नीचे दिए गए बटन से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर गवाहों से सत्यापित करवाएं:<br>
-                <div style="margin-top: 10px; background: #fff; padding: 10px; border-radius: 6px; text-align: center; border: 2px dashed #007BFF;">
-                    <a href="/uploads/Bonafide-1.pdf" download="Bonafide-1.pdf" style="display: inline-block; background: #007BFF; color: white; padding: 10px 15px; border-radius: 5px; font-weight: bold; text-decoration: none; font-size: 14px;">📥 मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
+                4. नीचे दिए गए लिंक से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर गवाहों से सत्यापित करवाएं:<br>
+                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
+                    📥 <a href="https://raw.githubusercontent.com/username/repo/main/uploads/Bonafide-1.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
                 </div>
             </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
@@ -442,6 +451,8 @@ def service_page(service_name):
 
 @app.route('/checkout', methods=['POST'])
 def checkout():
+    if not get_shop_status():
+        return redirect(url_for('home'))
     try:
         service_type = request.form.get('service_type')
         saved_file_filenames = []
