@@ -281,7 +281,7 @@ def service_page(service_name):
                     <label><b>नाम:</b></label>
                     <input type="text" name="cust_name" placeholder="आपका नाम" style="width:100%; padding:8px; margin:5px 0 10px 0;" required>
                     <label><b>मोबाइल नंबर:</b></label>
-                    <input type="text" name="cust_mobile" placeholder="मोबाइल नंबर" pattern="[0-9]{10}" style="width:100%; padding:8px; margin:5px 0 10px 0;" required>
+                    <input type="text" name="cust_mobile" placeholder="मोबाइल नंबर" style="width:100%; padding:8px; margin:5px 0 10px 0;" required>
                     <input type="hidden" name="cust_email" value="NA">
                     <label><b>दस्तावेज़ (मल्टीपल फाइलें चुनें):</b></label>
                     <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required style="width:100%; margin:5px 0 15px 0;">
@@ -389,7 +389,6 @@ def service_page(service_name):
         
     s_title, s_fee, has_file_upload = fees_mapping[service_name]
     
-    # पैन कार्ड या अन्य के लिए विशेष नोट और फील्ड्स
     extra_field_html = ""
     note_html = ""
     
@@ -448,7 +447,7 @@ def service_page(service_name):
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
                 
                 <label><b>मोबाइल नंबर:</b></label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल" pattern="[0-9]{10}" required>
+                <input type="text" name="cust_mobile" placeholder="मोबाइल नंबर दर्ज करें" required>
                 
                 <label><b>जीमेल (Email):</b></label>
                 <input type="text" name="cust_email" placeholder="email@gmail.com" required>
