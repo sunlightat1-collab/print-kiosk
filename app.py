@@ -295,7 +295,7 @@ def service_page(service_name):
                 <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
             </form>
         '''
-    elif service_name == 'bonafide':
+   elif service_name == 'bonafide':
         form_html = '''
             <h2>📜 मूल निवास प्रमाण पत्र (Bonafide)</h2>
             <div class="note">
@@ -305,7 +305,7 @@ def service_page(service_name):
                 3. पिता का पहचान पत्र / वोटर लिस्ट<br>
                 4. नीचे दिए गए लिंक से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर गवाहों से सत्यापित करवाएं:<br>
                 <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
-                    📥 <a href="https://raw.githubusercontent.com/username/repo/main/uploads/Bonafide-1.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
+                    📥 <a href="https://raw.githubusercontent.com/sunlightat1-collab/print-kiosk/main/Bonafide-1.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
                 </div>
             </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
@@ -327,6 +327,7 @@ def service_page(service_name):
                 <button type="submit">🚀 मूल निवास प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
         '''
+        
     elif service_name == 'farmer':
         form_html = '''
             <h2>🌽 FARMER ID APPLICATION</h2>
