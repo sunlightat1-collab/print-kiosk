@@ -16,8 +16,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 
-# --- Google Apps Script Web App URL ---
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycorSHkfBkBTXyOCWzj5wm9yz7l7d4vSYCAAtZUFicYqp09paRVAR4u0b_SDa6Exrnfw/exec"
+# --- आपका नया Google Apps Script Web App URL ---
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHmjYi-XPpPe5fw96Z4IjdBsGxYKmbPuhdO-Oa0u01mkjmUM9NUcw/exec"
 
 def get_shop_status():
     if not os.path.exists(STATUS_FILE):
@@ -113,10 +113,10 @@ HTML_ADMIN = """
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: Arial, sans-serif; background: #2c3e50; color: #fff; padding: 15px; margin: 0; }
-        .container { max-width: 800px; margin: auto; }
+        .container { max-width: 900px; margin: auto; }
         h2 { text-align: center; color: #f1c40f; }
         .card { background: #34495e; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .btn { display: inline-block; padding: 8px 15px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; margin: 5px 2px; }
+        .btn { display: inline-block; padding: 6px 12px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; margin: 3px 2px; font-size: 12px; }
         .btn-danger { background: #c0392b; }
         .btn-info { background: #2980b9; }
         .btn-warning { background: #d35400; }
@@ -140,14 +140,13 @@ HTML_ADMIN = """
                 <p style="color: #e74c3c; font-weight: bold;">स्थिति: बंद है (OFFLINE)</p>
                 <a href="/admin/toggle-status" class="btn">🟢 इसे चालू (ONLINE) दिखाएं</a>
             {% endif %}
-            <p style="font-size: 12px; color: #ccc; margin-top: 8px;">*नोट: स्टेटस चाहे बंद हो या चालू, ग्राहक हमेशा सभी फॉर्म भर सकेंगे।</p>
         </div>
 
         <div class="card">
             <h3>📢 होमपेज नोटिस अपडेट करें:</h3>
             <form method="POST" action="/admin/update-notice">
                 <textarea name="notice">{{ notice }}</textarea>
-                <button type="submit" class="btn btn-info" style="margin-top: 8px;">💾 नोट सेव करें व लाइव करें</button>
+                <button type="submit" class="btn btn-info" style="margin-top: 8px; padding: 8px 15px;">💾 नोट सेव करें व लाइव करें</button>
             </form>
         </div>
 
@@ -161,7 +160,7 @@ HTML_ADMIN = """
         </div>
 
         <div class="card">
-            <h3>⏳ ग्राहक पेंडिंग रिक्वेस्ट (New)</h3>
+            <h3>⏳ ग्राहक पेंडिंग रिक्वेस्ट (New / Sheet 1)</h3>
             <div style="overflow-x: auto;">
                 <table>
                     <tr>
@@ -170,34 +169,79 @@ HTML_ADMIN = """
                         <th>सेवा</th>
                         <th>फाइलें</th>
                         <th>स्टेटस</th>
+                        <th>एक्शन (कार्यवाही)</th>
                     </tr>
                     {% if requests_list %}
-                        {% for req in requests_list %}
+                        {% for i in range(requests_list|length) %}
                         <tr>
-                            <td>{{ req[0] }}</td>
-                            <td>{{ req[1] }}</td>
-                            <td>{{ req[3] }}</td>
+                            <td>{{ requests_list[i][0] }}</td>
+                            <td>{{ requests_list[i][1] }}</td>
+                            <td>{{ requests_list[i][3] }}</td>
                             <td>
-                                {% if req[5] and req[5] != 'कोई फाइल नहीं' %}
-                                    {% for fname in req[5].split(',') %}
+                                {% if requests_list[i][5] and requests_list[i][5] != 'कोई फाइल नहीं' %}
+                                    {% for fname in requests_list[i][5].split(',') %}
                                         <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline;">📁 {{ fname.strip() }}</a>
                                     {% endfor %}
                                 {% else %}
                                     कोई फाइल नहीं
                                 {% endif %}
                             </td>
-                            <td>{{ req[6] }}</td>
+                            <td>{{ requests_list[i][6] }}</td>
+                            <td>
+                                <a href="/admin/move/New/Accepted/{{ i }}" class="btn btn-warning">👉 मंजूर करें (Sheet 2)</a>
+                            </td>
                         </tr>
                         {% endfor %}
                     {% else %}
-                        <tr><td colspan="5" style="text-align:center;">अभी कोई नई सर्विस रिक्वेस्ट नहीं है या गूगल शीट से कनेक्ट नहीं हो पाया।</td></tr>
+                        <tr><td colspan="6" style="text-align:center;">अभी कोई नई सर्विस रिक्वेस्ट नहीं है।</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <!-- मंजूर किए गए आवेदन (Accepted / Sheet 2) -->
+        <div class="card">
+            <h3>📑 मंजूर किए गए आवेदन (Accepted / Sheet 2)</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <tr>
+                        <th>नाम</th>
+                        <th>मोबाइल</th>
+                        <th>सेवा</th>
+                        <th>फाइलें</th>
+                        <th>स्टेटस</th>
+                        <th>एक्शन (कार्यवाही)</th>
+                    </tr>
+                    {% if accepted_list %}
+                        {% for i in range(accepted_list|length) %}
+                        <tr>
+                            <td>{{ accepted_list[i][0] }}</td>
+                            <td>{{ accepted_list[i][1] }}</td>
+                            <td>{{ accepted_list[i][3] }}</td>
+                            <td>
+                                {% if accepted_list[i][5] and accepted_list[i][5] != 'कोई फाइल नहीं' %}
+                                    {% for fname in accepted_list[i][5].split(',') %}
+                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline;">📁 {{ fname.strip() }}</a>
+                                    {% endfor %}
+                                {% else %}
+                                    कोई फाइल नहीं
+                                {% endif %}
+                            </td>
+                            <td>{{ accepted_list[i][6] }}</td>
+                            <td>
+                                <a href="/admin/move/Accepted/Completed/{{ i }}" class="btn">✅ पूर्ण करें (Sheet 3)</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="6" style="text-align:center;">कोई मंजूर किया गया आवेदन नहीं है।</td></tr>
                     {% endif %}
                 </table>
             </div>
         </div>
 
         <div style="text-align: center; margin-top: 20px;">
-            <a href="/admin/logout" class="btn btn-danger">🔒 LOGOUT</a>
+            <a href="/admin/logout" class="btn btn-danger" style="padding: 10px 20px; font-size: 15px;">🔒 LOGOUT</a>
         </div>
     </div>
 </body>
@@ -228,12 +272,6 @@ def service_page(service_name):
     elif service_name == 'pan':
         form_html = '''
             <h2>💳 PAN CARD APPLICATION</h2>
-            <div class="note">
-                <b>📌 जरूरी नियम व दस्तावेज:</b><br>
-                1. <b>आधार कार्ड</b> (मुख्य पहचान)<br>
-                2. <b>अन्य आईडी</b> (जैसे: 10वीं मार्कशीट / वोटर आईडी आदि)<br>
-                <span style="color: #d9534f; font-weight: bold;">⚠️ ध्यान दें: अन्य दस्तावेज में दर्ज आपका नाम और विवरण पूरी तरह से आधार कार्ड के अनुसार ही होना चाहिए।</span>
-            </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="pan">
                 <label>👤 आवेदक का पूरा नाम (आधार के अनुसार):</label>
@@ -242,9 +280,9 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 कॉलम 1: आधार कार्ड अपलोड करें (PDF/Image):</label>
+                <label>📁 आधार कार्ड अपलोड करें:</label>
                 <input type="file" name="file_aadhar" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 कॉलम 2: अन्य जरूरी आईडी अपलोड करें (PDF/Image):</label>
+                <label>📁 अन्य जरूरी आईडी अपलोड करें:</label>
                 <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
             </form>
@@ -252,12 +290,6 @@ def service_page(service_name):
     elif service_name == 'pvc_aadhar':
         form_html = '''
             <h2>🪪 PVC AADHAR CARD (ओरिजिनल)</h2>
-            <div class="note">
-                <b>📌 जरूरी नियम व जानकारी:</b><br>
-                1. आधार कार्ड या आधार नंबर आवश्यक।<br>
-                2. आधार कार्ड से लिंक मोबाइल नंबर पर <b>OTP</b> आएगा।<br>
-                3. कुल शुल्क: <b>₹100</b>
-            </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="pvc_aadhar">
                 <label>👤 आवेदक का पूरा नाम:</label>
@@ -266,7 +298,7 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड अपलोड करें (PDF/Image):</label>
+                <label>📁 आधार कार्ड अपलोड करें:</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
             </form>
@@ -274,16 +306,6 @@ def service_page(service_name):
     elif service_name == 'bonafide':
         form_html = '''
             <h2>📜 मूल निवास प्रमाण पत्र (Bonafide)</h2>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
-                1. आधार स्वयं एवं पिता का आधार<br>
-                2. जन आधार एवं राशन कार्ड<br>
-                3. पिता का पहचान पत्र / वोटर लिस्ट<br>
-                4. नीचे दिए गए लिंक से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर गवाहों से सत्यापित करवाएं:<br>
-                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
-                    📥 <a href="https://raw.githubusercontent.com/sunlightat1-collab/print-kiosk/main/Bonafide-1.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
-                </div>
-            </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="bonafide">
                 <label>👤 आवेदक का पूरा नाम:</label>
@@ -292,13 +314,13 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 फाइल 1: भरा हुआ मूलनिवास आवेदन पत्र:</label>
+                <label>📁 फाइल 1 (आवेदन पत्र):</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 2: स्वयं व पिता का आधार कार्ड:</label>
+                <label>📁 फाइल 2 (आधार कार्ड):</label>
                 <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 3: जन आधार व राशन कार्ड:</label>
+                <label>📁 फाइल 3 (जन आधार):</label>
                 <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 4: पिता का पहचान पत्र व वोटर लिस्ट सबूत:</label>
+                <label>📁 फाइल 4 (अन्य सबूत):</label>
                 <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 मूल निवास प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
@@ -306,16 +328,6 @@ def service_page(service_name):
     elif service_name == 'caste':
         form_html = '''
             <h2>📑 जाति प्रमाण पत्र (Caste Certificate)</h2>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
-                1. आवेदक का आधार कार्ड एवं पिता का आधार कार्ड<br>
-                2. जन आधार कार्ड एवं राशन कार्ड<br>
-                3. पिता का पहचान पत्र (Voter ID)<br>
-                4. पुराना जाति प्रमाण पत्र या जाति प्रूफ<br>
-                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
-                    📥 <a href="https://raw.githubusercontent.com/sunlightat1-collab/print-kiosk/main/OBC-CASTE.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">जाति प्रमाण पत्र आवेदन फॉर्म (PDF) डाउनलोड करें</a>
-                </div>
-            </div>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="caste">
                 <label>👤 आवेदक का पूरा नाम:</label>
@@ -324,13 +336,13 @@ def service_page(service_name):
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 फाइल 1: भरा हुआ जाति आवेदन पत्र:</label>
+                <label>📁 फाइल 1 (आवेदन पत्र):</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 2: स्वयं व पिता का आधार कार्ड:</label>
+                <label>📁 फाइल 2 (आधार कार्ड):</label>
                 <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 3: जन आधार व राशन कार्ड:</label>
+                <label>📁 फाइल 3 (जन आधार):</label>
                 <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 4: पिता का वोटर आईडी व पुराना जाति प्रमाण पत्र:</label>
+                <label>📁 फाइल 4 (पुराना प्रमाण पत्र):</label>
                 <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 जाति प्रमाण पत्र हेतु आगे बढ़ें</button>
             </form>
@@ -342,16 +354,14 @@ def service_page(service_name):
                 <input type="hidden" name="service_type" value="farmer">
                 <label>👤 किसान का पूरा नाम:</label>
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
+                <label>📱 मोबाइल नंबर:</label>
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
+                <label>📁 आधार कार्ड:</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (जमाबंदी):</label>
+                <label>📁 जमाबंदी:</label>
                 <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 3 (जन आधार):</label>
-                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 FARMER ID के लिए आगे बढ़ें</button>
             </form>
         '''
@@ -362,13 +372,13 @@ def service_page(service_name):
                 <input type="hidden" name="service_type" value="shramik">
                 <label>👤 श्रमिक का पूरा नाम:</label>
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
+                <label>📱 मोबाइल नंबर:</label>
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
+                <label>📁 आधार कार्ड:</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (बैंक पासबुक):</label>
+                <label>📁 बैंक पासबुक:</label>
                 <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 SHRAMIK CARD के लिए आगे बढ़ें</button>
             </form>
@@ -378,34 +388,30 @@ def service_page(service_name):
             <h2>🆔 JAN AADHAAR CARD</h2>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="jan_aadhaar">
-                <label>👤 मुखिया / आवेदक का नाम:</label>
+                <label>👤 मुखिया का नाम:</label>
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
                 <label>📱 मोबाइल नंबर:</label>
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
+                <label>📁 आधार कार्ड:</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (अन्य सहायक दस्तावेज):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 JAN AADHAAR के लिए आगे बढ़ें</button>
             </form>
         '''
     elif service_name == 'ayushman':
         form_html = '''
-            <h2>🏥 AYUSHMAN CARD (स्वास्थ्य कार्ड)</h2>
+            <h2>🏥 AYUSHMAN CARD</h2>
             <form action="/checkout" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="ayushman">
-                <label>👤 लाभार्थी का पूरा नाम:</label>
+                <label>👤 लाभार्थी का नाम:</label>
                 <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
+                <label>📱 मोबाइल नंबर:</label>
                 <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
                 <label>📧 जीमेल (Gmail) पता:</label>
                 <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
+                <label>📁 आधार कार्ड:</label>
                 <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (राशन कार्ड / सूची):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
                 <button type="submit">🚀 AYUSHMAN CARD के लिए आगे बढ़ें</button>
             </form>
         '''
@@ -419,31 +425,12 @@ def service_page(service_name):
         <title>BHUARKARKA SERVICES</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <style>
-            body { 
-                font-family: Arial, sans-serif; 
-                background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; 
-                background-size: cover; 
-                padding: 20px; 
-                text-align: center; 
-                min-height: 100vh;
-            }
-            .card { 
-                background: linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)); 
-                max-width: 450px; 
-                margin: auto; 
-                padding: 20px; 
-                border-radius: 12px; 
-                box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
-                text-align: left;
-            }
-            input[type="text"], input[type="file"], select, button { 
-                width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; 
-            }
-            button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 0.5px;}
-            button:hover { background-color: #218838; }
-            .note { font-size: 13px; color: #b22222; margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.5; }
+            body { font-family: Arial, sans-serif; background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; background-size: cover; padding: 20px; text-align: center; min-height: 100vh;}
+            .card { background: rgba(255, 255, 255, 0.96); max-width: 450px; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0px 0px 15px rgba(0,0,0,0.3); text-align: left;}
+            input[type="text"], input[type="file"], select, button { width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; }
+            button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; font-family: 'Britannic Bold', Arial, sans-serif;}
             label { font-weight: bold; color: #333; font-size: 13px; }
-            h2 { font-family: 'Britannic Bold', Arial, sans-serif; color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; letter-spacing: 0.5px; }
+            h2 { font-family: 'Britannic Bold', Arial, sans-serif; color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; }
             .back-link { display: block; text-align: center; margin-top: 15px; color: #007BFF; text-decoration: none; font-weight: bold; }
         </style>
     </head>
@@ -485,10 +472,7 @@ def checkout():
             "status": "Pending (पेंडिंग)"
         }
 
-        try:
-            requests.post(GOOGLE_SCRIPT_URL, json=payload, timeout=10)
-        except Exception as api_err:
-            print(f"Google Script Error: {api_err}")
+        requests.post(GOOGLE_SCRIPT_URL, json=payload, timeout=10)
 
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.95); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
@@ -524,14 +508,38 @@ def admin_panel():
         '''
     
     requests_list = []
+    accepted_list = []
+    
     try:
-        res = requests.get(GOOGLE_SCRIPT_URL + "?action=get_data&sheetName=New", timeout=10)
-        if res.status_code == 200:
-            requests_list = res.json()
+        res1 = requests.get(GOOGLE_SCRIPT_URL + "?action=get_data&sheetName=New", timeout=10)
+        if res1.status_code == 200:
+            requests_list = res1.json()
+            
+        res2 = requests.get(GOOGLE_SCRIPT_URL + "?action=get_data&sheetName=Accepted", timeout=10)
+        if res2.status_code == 200:
+            accepted_list = res2.json()
     except Exception as e:
         print(f"Fetch Error: {e}")
 
-    return render_template_string(HTML_ADMIN, is_online=get_shop_status(), notice=get_shop_notice(), requests_list=requests_list)
+    return render_template_string(HTML_ADMIN, is_online=get_shop_status(), notice=get_shop_notice(), requests_list=requests_list, accepted_list=accepted_list)
+
+@app.route('/admin/move/<source_sheet>/<target_sheet>/<int:row_index>')
+def move_row(source_sheet, target_sheet, row_index):
+    if not session.get('logged_in'):
+        return redirect(url_for('admin_panel'))
+    
+    try:
+        payload = {
+            "action": "moveRow",
+            "sourceSheet": source_sheet,
+            "targetSheet": target_sheet,
+            "rowIndex": row_index
+        }
+        requests.post(GOOGLE_SCRIPT_URL, json=payload, timeout=10)
+    except Exception as e:
+        print(f"Move Error: {e}")
+        
+    return redirect(url_for('admin_panel'))
 
 @app.route('/admin/toggle-status')
 def toggle_status():
