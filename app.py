@@ -19,8 +19,8 @@ NOTICE_FILE = 'shop_notice.txt'
 # ⚠️ यहाँ अपनी सही Google Apps Script URL डालें
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHmjYi-XPpPe5fw96Z4IjdBsGxYKmbPuhdO-Oa0u01mkjmUM9NUcw/exec"
 
-# 🟢 आपकी अपडेटेड UPI आईडी यहाँ सेट कर दी गई है
-OWNER_UPI_ID = "Q508475385@ybl" 
+# 🟢 अपनी UPI आईडी यहाँ दर्ज करें (जिस पर पेमेंट मंगाना है)
+OWNER_UPI_ID = "prakash@upi" 
 OWNER_NAME = "BHUARKARKA SERVICES"
 
 def get_shop_status():
@@ -185,12 +185,12 @@ HTML_ADMIN = """
                             <td>{{ requests_list[i][3] }}</td>
                             <td><b>₹{{ requests_list[i][4] }}</b><br><small>UTR: {{ requests_list[i][7] if requests_list[i]|length > 7 else 'N/A' }}</small></td>
                             <td>
-                                {% if requests_list[i][5] and requests_list[i][5] != 'कोई फाइल नहीं' and requests_list[i][5] != 'ई-मित्र पर संपर्क करें' %}
+                                {% if requests_list[i][5] and requests_list[i][5] != 'कोई फाइल नहीं' %}
                                     {% for fname in requests_list[i][5].split(',') %}
                                         <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline; margin-bottom:3px;">📁 {{ fname.strip() }}</a>
                                     {% endfor %}
                                 {% else %}
-                                    {{ requests_list[i][5] }}
+                                    कोई फाइल नहीं
                                 {% endif %}
                             </td>
                             <td>{{ requests_list[i][6] }}</td>
@@ -227,12 +227,12 @@ HTML_ADMIN = """
                             <td>{{ accepted_list[i][3] }}</td>
                             <td><b>₹{{ accepted_list[i][4] }}</b></td>
                             <td>
-                                {% if accepted_list[i][5] and accepted_list[i][5] != 'कोई फाइल नहीं' and accepted_list[i][5] != 'ई-मित्र पर संपर्क करें' %}
+                                {% if accepted_list[i][5] and accepted_list[i][5] != 'कोई फाइल नहीं' %}
                                     {% for fname in accepted_list[i][5].split(',') %}
                                         <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline; margin-bottom:3px;">📁 {{ fname.strip() }}</a>
                                     {% endfor %}
                                 {% else %}
-                                    {{ accepted_list[i][5] }}
+                                    कोई फाइल नहीं
                                 {% endif %}
                             </td>
                             <td>{{ accepted_list[i][6] }}</td>
@@ -266,6 +266,7 @@ def home():
 @app.route('/service/<service_name>')
 def service_page(service_name):
     if service_name == 'print':
+        # Self Print बिना फीस के सीधा सबमिट होगा
         return render_template_string('''
         <!DOCTYPE html>
         <html>
@@ -291,36 +292,23 @@ def service_page(service_name):
         </html>
         ''')
     
+    # बाकी सभी सर्विसेज के लिए फीस तय की गई है
     fees_mapping = {
-        'pan': ('PAN Card Application', 200, True),
-        'pvc_aadhar': ('PVC Aadhar Card', 100, True),
-        'bonafide': ('मूल निवास प्रमाण पत्र', 200, False),  # False मतलब ब्राउज़र फाइल अपलोड नहीं चाहिए
-        'caste': ('जाति प्रमाण पत्र', 200, False),      # False मतलब ब्राउज़र फाइल अपलोड नहीं चाहिए
-        'farmer': ('Farmer ID', 100, True),
-        'shramik': ('Shramik Card', 200, True),
-        'jan_aadhaar': ('Jan Aadhar Card', 50, True),
-        'jan_aadhaar_pvc': ('Jan Aadhar PVC Card', 100, True),
-        'ayushman': ('Ayushman Card', 100, True)
+        'pan': ('PAN Card Application', 200),
+        'pvc_aadhar': ('PVC Aadhar Card', 100),
+        'bonafide': ('मूल निवास प्रमाण पत्र', 200),
+        'caste': ('जाति प्रमाण पत्र', 200),
+        'farmer': ('Farmer ID', 100),
+        'shramik': ('Shramik Card', 200),
+        'jan_aadhaar': ('Jan Aadhar Card', 50),
+        'jan_aadhaar_pvc': ('Jan Aadhar PVC Card', 100),
+        'ayushman': ('Ayushman Card', 100)
     }
     
     if service_name not in fees_mapping:
         return redirect(url_for('home'))
         
-    s_title, s_fee, has_file_upload = fees_mapping[service_name]
-    
-    # यदि फाइल अपलोड है तो फाइल इनपुट दिखाएं, नहीं तो नोट दिखाएं
-    if has_file_upload:
-        file_section = '''
-            <label><b>दस्तावेज अपलोड करें (मल्टीपल फाइलें):</b></label>
-            <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-        '''
-    else:
-        file_section = '''
-            <div style="background: #fff3cd; color: #856404; padding: 10px; border-radius: 5px; font-size: 13px; font-weight: bold; text-align: center; margin: 10px 0; border: 1px solid #ffeeba;">
-                ⚠️ सभी दस्तावेज़ एवं फॉर्म नजदीकी ई-मित्र से ऑनलाइन आवेदन करें।
-            </div>
-            <input type="hidden" name="no_file_note" value="ई-मित्र पर संपर्क करें">
-        '''
+    s_title, s_fee = fees_mapping[service_name]
     
     return render_template_string(f'''
     <!DOCTYPE html>
@@ -353,7 +341,8 @@ def service_page(service_name):
                 <label><b>जीमेल (Email):</b></label>
                 <input type="text" name="cust_email" placeholder="email@gmail.com" required>
                 
-                {file_section}
+                <label><b>दस्तावेज अपलोड करें (मल्टीपल फाइलें):</b></label>
+                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 
                 <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
                 
@@ -385,18 +374,15 @@ def submit_service():
         cust_email = request.form.get('cust_email', 'लागू नहीं')
         utr_number = request.form.get('utr_number', 'Direct / N/A')
         
-        # जाँचें कि क्या इस फॉर्म में फाइल अपलोड का विकल्प था या नोट
-        if 'no_file_note' in request.form:
-            filenames_str = "ई-मित्र पर संपर्क करें"
-        else:
-            uploaded_files = []
-            files = request.files.getlist('files')
-            for file in files:
-                if file and file.filename != '':
-                    filename = file.filename
-                    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-                    uploaded_files.append(filename)
-            filenames_str = ", ".join(uploaded_files) if uploaded_files else 'कोई फाइल नहीं'
+        uploaded_files = []
+        files = request.files.getlist('files')
+        for file in files:
+            if file and file.filename != '':
+                filename = file.filename
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                uploaded_files.append(filename)
+        
+        filenames_str = ", ".join(uploaded_files) if uploaded_files else 'कोई फाइल नहीं'
         
         payload = {
             "sheetName": "New",
@@ -415,7 +401,7 @@ def submit_service():
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:25px; background:white; max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2);">
                 <h2 style="color:#28a745;">✅ आवेदन सफलतापर्वूक जमा हो गया!</h2>
-                <p style="font-size:15px; color:#333;">आपका डेटा और पेमेंट UTR नंबर हमारे पास सुरक्षित पहुंच गया है। जल्द ही आपका काम कर दिया जाएगा।</p>
+                <p style="font-size:15px; color:#333;">आपका डेटा, फाइलें और पेमेंट UTR नंबर हमारे पास सुरक्षित पहुंच गया है। जल्द ही आपका काम कर दिया जाएगा।</p>
                 <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px; font-weight:bold;">🏠 होम पेज पर वापस जाएं</a>
             </div>
         '''
