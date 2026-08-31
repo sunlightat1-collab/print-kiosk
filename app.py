@@ -1,6 +1,7 @@
-from flask import Flask, request, render_template_string, send_from_directory, redirect, url_for, session
+from flask import Flask, request, render_template_string, send_from_directory, redirect, url_for
 import os
-import socket
+import requests
+import json
 
 app = Flask(__name__)
 app.secret_key = 'prakash_print_kiosk_secret_key'
@@ -13,30 +14,20 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 
+# --- Google Apps Script Web App URL ---
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFyfYjTV3F5MWDHKZLKQTop6sUP4-msknhe96aJPOKJsPWxw7JtCwtIrp3HOelC_9tOA/exec"
+
 def get_shop_status():
     if not os.path.exists(STATUS_FILE):
         return True
     with open(STATUS_FILE, 'r') as f:
         return f.read().strip() == 'ON'
 
-def set_shop_status(status):
-    with open(STATUS_FILE, 'w') as f:
-        f.write('ON' if status else 'OFF')
-
 def get_shop_notice():
     if not os.path.exists(NOTICE_FILE):
         return "🙏 BHUARKARKA SERVICES में आपका स्वागत है! सभी प्रकार के ऑनलाइन फॉर्म व प्रिंटिंग यहाँ उपलब्ध हैं।"
     with open(NOTICE_FILE, 'r', encoding='utf-8') as f:
         return f.read().strip()
-
-def set_shop_notice(notice):
-    with open(NOTICE_FILE, 'w', encoding='utf-8') as f:
-        f.write(notice)
-
-UPI_ID = "Q508475385@ybl"
-MERCHANT_NAME = "BHUARKARKA SERVICES"
-
-pending_requests = []
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
@@ -63,733 +54,94 @@ HTML_HOME = '''
             text-align: center; 
             min-height: 100vh;
         }
-        .container {
-            max-width: 600px;
-            margin: auto;
-        }
-        h1 {
-            font-family: 'Britannic Bold', Arial, sans-serif;
-            color: white;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-            margin-bottom: 10px;
-            letter-spacing: 1px;
-        }
-        .notice-banner {
-            background: rgba(255, 193, 7, 0.95);
-            color: #333;
-            padding: 10px 15px;
-            border-radius: 8px;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border: 1px dashed #d39e00;
-            text-align: center;
-            animation: fadeIn 0.5s;
-        }
-        .shop-status {
-            display: inline-flex;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.75);
-            padding: 8px 16px;
-            border-radius: 30px;
-            color: white;
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.2);
-            font-family: 'Britannic Bold', Arial, sans-serif;
-            letter-spacing: 0.5px;
-        }
-        .status-dot-online {
-            height: 12px;
-            width: 12px;
-            background-color: #28a745;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            box-shadow: 0 0 8px #28a745;
-            animation: pulse-online 1.5s infinite;
-        }
-        .status-dot-offline {
-            height: 12px;
-            width: 12px;
-            background-color: #d9534f;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-            box-shadow: 0 0 8px #d9534f;
-            animation: pulse-offline 1.5s infinite;
-        }
-        @keyframes pulse-online {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(40, 167, 69, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-        }
-        @keyframes pulse-offline {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 83, 79, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(217, 83, 79, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(217, 83, 79, 0); }
-        }
-        .app-grid {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 15px;
-        }
-        .app-icon-card {
-            background: rgba(255, 255, 255, 0.95);
-            width: 130px;
-            height: 130px;
-            border-radius: 20px;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            color: #333;
-            transition: transform 0.2s, background 0.2s;
-            cursor: pointer;
-            border: 2px solid #ddd;
-        }
-        .app-icon-card:hover {
-            transform: scale(1.08);
-            background: #ffffff;
-            border-color: #28a745;
-        }
-        .emoji {
-            font-size: 35px;
-            margin-bottom: 6px;
-        }
-        .title-text {
-            font-family: 'Britannic Bold', Arial, sans-serif;
-            font-size: 11px;
-            text-align: center;
-            padding: 0 4px;
-            color: #2c3e50;
-            letter-spacing: 0.5px;
-        }
+        .container { max-width: 600px; margin: auto; }
+        h1 { font-family: 'Britannic Bold', Arial, sans-serif; color: white; text-shadow: 2px 2px 6px rgba(0,0,0,0.8); margin-bottom: 10px; }
+        .notice-banner { background: rgba(255, 193, 7, 0.95); color: #333; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px dashed #d39e00; }
+        .shop-status { display: inline-flex; align-items: center; background: rgba(0, 0, 0, 0.75); padding: 8px 16px; border-radius: 30px; color: white; font-weight: bold; font-size: 14px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); }
+        .status-dot-online { height: 12px; width: 12px; background-color: #28a745; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 8px #28a745; }
+        .status-dot-offline { height: 12px; width: 12px; background-color: #d9534f; border-radius: 50%; display: inline-block; margin-right: 8px; box-shadow: 0 0 8px #d9534f; }
+        .app-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; }
+        .app-icon-card { background: rgba(255, 255, 255, 0.95); width: 130px; height: 130px; border-radius: 20px; box-shadow: 0 8px 20px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; justify-content: center; text-decoration: none; color: #333; transition: transform 0.2s; border: 2px solid #ddd; }
+        .app-icon-card:hover { transform: scale(1.08); border-color: #28a745; }
+        .emoji { font-size: 35px; margin-bottom: 6px; }
+        .title-text { font-family: 'Britannic Bold', Arial, sans-serif; font-size: 11px; text-align: center; padding: 0 4px; color: #2c3e50; }
     </style>
-    <script>
-        setInterval(function() {
-            fetch('/check-status')
-            .then(response => response.json())
-            .then(data => {
-                const statusDiv = document.getElementById('shop-status-container');
-                if (data.is_online) {
-                    statusDiv.innerHTML = '<span class="status-dot-online"></span> दुकान खुली है (ONLINE)';
-                } else {
-                    statusDiv.innerHTML = '<span class="status-dot-offline"></span> दुकान बंद है (OFFLINE)';
-                }
-                document.getElementById('notice-banner-container').innerText = data.notice;
-            });
-        }, 3000);
-    </script>
 </head>
 <body>
     <div class="container">
         <h1>🖨️ BHUARKARKA SERVICES 🙏</h1>
-        
-        <div class="notice-banner" id="notice-banner-container">
-            📢 {{ notice }}
-        </div>
-
-        <div class="shop-status" id="shop-status-container">
+        <div class="notice-banner">📢 {{ notice }}</div>
+        <div class="shop-status">
             {% if is_online %}
                 <span class="status-dot-online"></span> दुकान खुली है (ONLINE)
             {% else %}
                 <span class="status-dot-offline"></span> दुकान बंद है (OFFLINE)
             {% endif %}
         </div>
-
         <p style="color: #fff; margin-bottom: 20px; font-weight: bold;">कृपया अपनी सेवा चुनें:</p>
-        
         <div class="app-grid">
-            <a href="/service/print" class="app-icon-card">
-                <div class="emoji">📄</div>
-                <div class="title-text">SELF PRINT</div>
-            </a>
-            <a href="/service/pan" class="app-icon-card">
-                <div class="emoji">💳</div>
-                <div class="title-text">PAN CARD</div>
-            </a>
-            <a href="/service/pvc_aadhar" class="app-icon-card">
-                <div class="emoji">🪪</div>
-                <div class="title-text">PVC AADHAR</div>
-            </a>
-            <a href="/service/bonafide" class="app-icon-card">
-                <div class="emoji">📜</div>
-                <div class="title-text">मूल निवास प्रमाण पत्र</div>
-            </a>
-            <a href="/service/caste" class="app-icon-card">
-                <div class="emoji">📑</div>
-                <div class="title-text">जाति प्रमाण पत्र</div>
-            </a>
-            <a href="/service/farmer" class="app-icon-card">
-                <div class="emoji">🌽</div>
-                <div class="title-text">FARMER ID</div>
-            </a>
-            <a href="/service/shramik" class="app-icon-card">
-                <div class="emoji">👷</div>
-                <div class="title-text">SHRAMIK CARD</div>
-            </a>
-            <a href="/service/jan_aadhaar" class="app-icon-card">
-                <div class="emoji">🆔</div>
-                <div class="title-text">JAN AADHAAR</div>
-            </a>
-            <a href="/service/ayushman" class="app-icon-card">
-                <div class="emoji">🏥</div>
-                <div class="title-text">AYUSHMAN CARD</div>
-            </a>
+            <a href="/service/print" class="app-icon-card"><div class="emoji">📄</div><div class="title-text">SELF PRINT</div></a>
+            <a href="/service/pan" class="app-icon-card"><div class="emoji">💳</div><div class="title-text">PAN CARD</div></a>
+            <a href="/service/pvc_aadhar" class="app-icon-card"><div class="emoji">🪪</div><div class="title-text">PVC AADHAR</div></a>
+            <a href="/service/bonafide" class="app-icon-card"><div class="emoji">📜</div><div class="title-text">मूल निवास</div></a>
+            <a href="/service/caste" class="app-icon-card"><div class="emoji">📑</div><div class="title-text">जाति प्रमाण पत्र</div></a>
+            <a href="/service/farmer" class="app-icon-card"><div class="emoji">🌽</div><div class="title-text">FARMER ID</div></a>
+            <a href="/service/shramik" class="app-icon-card"><div class="emoji">👷</div><div class="title-text">SHRAMIK CARD</div></a>
+            <a href="/service/jan_aadhaar" class="app-icon-card"><div class="emoji">🆔</div><div class="title-text">JAN AADHAAR</div></a>
+            <a href="/service/ayushman" class="app-icon-card"><div class="emoji">🏥</div><div class="title-text">AYUSHMAN CARD</div></a>
         </div>
     </div>
 </body>
 </html>
 '''
 
-ALLOWED_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.jfif'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in [ext.replace('.', '') for ext in ALLOWED_EXTENSIONS]
-
-@app.route('/check-status')
-def check_status():
-    return {'is_online': get_shop_status(), 'notice': get_shop_notice()}
-
 @app.route('/')
 def home():
-    is_online = get_shop_status()
-    notice = get_shop_notice()
-    return render_template_string(HTML_HOME, is_online=is_online, notice=notice)
+    return render_template_string(HTML_HOME, is_online=get_shop_status(), notice=get_shop_notice())
 
 @app.route('/service/<service_name>')
 def service_page(service_name):
-    # दुकान बंद होने पर भी सर्विसेज चालू रहेंगी (चेक यहाँ से हटा दिया गया है)
-
-    if service_name == 'print':
-        form_html = '''
-            <h2>📄 SELF PRINT SERVICE</h2>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="print">
-                <label>📁 डॉक्यूमेंट / फाइल अपलोड करें (केवल PDF या इमेज):</label>
-                <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
-                <label>⚙️ प्रिंट प्रकार:</label>
-                <select name="print_type">
-                    <option value="bw">ब्लैक एंड व्हाइट (सादी)</option>
-                    <option value="color">कलर प्रिंट (रंगीन)</option>
-                </select>
-                <button type="submit">🚀 प्रिंट के लिए आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'pan':
-        form_html = '''
-            <h2>💳 PAN CARD APPLICATION</h2>
-            <div class="note">
-                <b>📌 जरूरी नियम व दस्तावेज:</b><br>
-                1. <b>आधार कार्ड</b> (मुख्य पहचान)<br>
-                2. <b>अन्य आईडी</b> (जैसे: 10वीं मार्कशीट / वोटर आईडी आदि)<br>
-                <span style="color: #d9534f; font-weight: bold;">⚠️ ध्यान दें: अन्य दस्तावेज में दर्ज आपका नाम और विवरण पूरी तरह से आधार कार्ड के अनुसार ही होना चाहिए।</span>
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="pan">
-                <label>👤 आवेदक का पूरा नाम (आधार के अनुसार):</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 कॉलम 1: आधार कार्ड अपलोड करें (PDF/Image):</label>
-                <input type="file" name="file_aadhar" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 कॉलम 2: अन्य जरूरी आईडी अपलोड करें (PDF/Image):</label>
-                <input type="file" name="file_other" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 ₹200 का भुगतान करें व आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'pvc_aadhar':
-        form_html = '''
-            <h2>🪪 PVC AADHAR CARD (ओरिजिनल)</h2>
-            <div class="note">
-                <b>📌 जरूरी नियम व जानकारी:</b><br>
-                1. आधार कार्ड या आधार नंबर आवश्यक।<br>
-                2. आधार कार्ड से लिंक मोबाइल नंबर पर <b>OTP</b> आएगा।<br>
-                3. कुल शुल्क: <b>₹100</b>
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="pvc_aadhar">
-                <label>👤 आवेदक का पूरा नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर (आधार लिंक्ड - OTP हेतु):</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 आधार कार्ड अपलोड करें (PDF/Image):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 ₹100 का भुगतान करें व आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'bonafide':
-        form_html = '''
-            <h2>📜 मूल निवास प्रमाण पत्र (Bonafide)</h2>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
-                1. आधार स्वयं एवं पिता का आधार<br>
-                2. जन आधार एवं राशन कार्ड<br>
-                3. पिता का पहचान पत्र / वोटर लिस्ट<br>
-                4. नीचे दिए गए लिंक से **मूलनिवास आवेदन पत्र (Bonafide Form)** डाउनलोड करें, भरकर गवाहों से सत्यापित करवाएं:<br>
-                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
-                    📥 <a href="https://raw.githubusercontent.com/sunlightat1-collab/print-kiosk/main/Bonafide-1.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">मूलनिवास आवेदन पत्र (फॉर्म PDF) डाउनलोड करें</a>
-                </div>
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="bonafide">
-                <label>👤 आवेदक का पूरा नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 फाइल 1: भरा हुआ मूलनिवास आवेदन पत्र:</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 2: स्वयं व पिता का आधार कार्ड:</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 3: जन आधार व राशन कार्ड:</label>
-                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 4: पिता का पहचान पत्र व वोटर लिस्ट सबूत:</label>
-                <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 मूल निवास प्रमाण पत्र हेतु आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'caste':
-        form_html = '''
-            <h2>📑 जाति प्रमाण पत्र (Caste Certificate)</h2>
-            <div class="note">
-                <b>📌 जरूरी दस्तावेज व नियम:</b><br>
-                1. आवेदक का आधार कार्ड एवं पिता का आधार कार्ड<br>
-                2. जन आधार कार्ड एवं राशन कार्ड<br>
-                3. पिता का पहचान पत्र (Voter ID)<br>
-                4. पुराना जाति प्रमाण पत्र या जाति प्रूफ (न होने पर सक्षम अधिकारी से रिपोर्ट)<br>
-                5. 1993 या 1980 की वोटर लिस्ट, फॉर्म-16 (यदि लागू हो)<br>
-                6. नीचे दिए गए लिंक से **जाति प्रमाण पत्र आवेदन फॉर्म** डाउनलोड करें, **2 उत्तरदायी गवाहों के हस्ताक्षर** करवाएं और **पटवारी रिपोर्ट** करवाना सुनिश्चित करें:<br>
-                <div style="margin-top: 10px; background: #fff; padding: 8px; border-radius: 4px; text-align: center; border: 1px dashed #007BFF;">
-                    📥 <a href="https://raw.githubusercontent.com/sunlightat1-collab/print-kiosk/main/OBC-CASTE.pdf" target="_blank" style="color: #007BFF; font-weight: bold; text-decoration: none;">जाति प्रमाण पत्र आवेदन फॉर्म (PDF) डाउनलोड करें</a>
-                </div>
-            </div>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="caste">
-                <label>👤 आवेदक का पूरा नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 फाइल 1: भरा हुआ जाति आवेदन पत्र (गवाह व पटवारी रिपोर्ट सहित):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 2: स्वयं व पिता का आधार कार्ड:</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 3: जन आधार व राशन कार्ड:</label>
-                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 फाइल 4: पिता का वोटर आईडी व पुराना जाति प्रमाण पत्र / वोटर लिस्ट (1993/1980):</label>
-                <input type="file" name="file_col4" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 जाति प्रमाण पत्र हेतु आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'farmer':
-        form_html = '''
-            <h2>🌽 FARMER ID APPLICATION</h2>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="farmer">
-                <label>👤 किसान का पूरा नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (जमाबंदी):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 3 (जन आधार):</label>
-                <input type="file" name="file_col3" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 FARMER ID के लिए आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'shramik':
-        form_html = '''
-            <h2>👷 SHRAMIK CARD (ई-श्रम)</h2>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="shramik">
-                <label>👤 श्रमिक का पूरा नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (बैंक पासबुक):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 SHRAMIK CARD के लिए आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'jan_aadhaar':
-        form_html = '''
-            <h2>🆔 JAN AADHAAR CARD</h2>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="jan_aadhaar">
-                <label>👤 मुखिया / आवेदक का नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर:</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (अन्य सहायक दस्तावेज):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 JAN AADHAAR के लिए आगे बढ़ें</button>
-            </form>
-        '''
-    elif service_name == 'ayushman':
-        form_html = '''
-            <h2>🏥 AYUSHMAN CARD (स्वास्थ्य कार्ड)</h2>
-            <form action="/checkout" method="POST" enctype="multipart/form-data">
-                <input type="hidden" name="service_type" value="ayushman">
-                <label>👤 लाभार्थी का पूरा नाम:</label>
-                <input type="text" name="cust_name" placeholder="पूरा नाम दर्ज करें" required>
-                <label>📱 मोबाइल नंबर (आधार लिंक्ड):</label>
-                <input type="text" name="cust_mobile" placeholder="10 अंकों का मोबाइल नंबर" pattern="[0-9]{10}" required>
-                <label>📧 जीमेल (Gmail) पता:</label>
-                <input type="text" name="cust_email" placeholder="example@gmail.com" required>
-                <label>📁 दस्तावेज़ 1 (आधार कार्ड):</label>
-                <input type="file" name="file_col1" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <label>📁 दस्तावेज़ 2 (राशन कार्ड / सूची):</label>
-                <input type="file" name="file_col2" accept=".pdf,.jpg,.jpeg,.jfif" required>
-                <button type="submit">🚀 AYUSHMAN CARD के लिए आगे बढ़ें</button>
-            </form>
-        '''
-    else:
-        return redirect(url_for('home'))
-
-    return render_template_string('''
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>BHUARKARKA SERVICES</title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <style>
-            body { 
-                font-family: Arial, sans-serif; 
-                background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; 
-                background-size: cover; 
-                padding: 20px; 
-                text-align: center; 
-                min-height: 100vh;
-            }
-            .card { 
-                background: linear-gradient(rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.96)); 
-                max-width: 450px; 
-                margin: auto; 
-                padding: 20px; 
-                border-radius: 12px; 
-                box-shadow: 0px 0px 15px rgba(0,0,0,0.3); 
-                text-align: left;
-            }
-            input[type="text"], input[type="file"], select, button { 
-                width: 100%; padding: 10px; margin: 8px 0; font-size: 15px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; background: #fff; 
-            }
-            button { background-color: #28a745; color: white; border: none; cursor: pointer; font-weight: bold; margin-top: 15px; font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 0.5px;}
-            button:hover { background-color: #218838; }
-            .note { font-size: 13px; color: #b22222; margin-bottom: 15px; background: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeeba; line-height: 1.5; }
-            label { font-weight: bold; color: #333; font-size: 13px; }
-            h2 { font-family: 'Britannic Bold', Arial, sans-serif; color: #2c3e50; margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 8px; text-align: center; letter-spacing: 0.5px; }
-            .back-link { display: block; text-align: center; margin-top: 15px; color: #007BFF; text-decoration: none; font-weight: bold; }
-        </style>
-    </head>
-    <body>
-        <div class="card">
-            ''' + form_html + '''
-            <a href="/" class="back-link">⬅️ होम पेज पर वापस जाएं</a>
-        </div>
-    </body>
-    </html>
-    ''')
-
-@app.route('/checkout', methods=['POST'])
-def checkout():
-    try:
-        service_type = request.form.get('service_type')
-        saved_file_filenames = []
-        
-        if service_type == 'print':
-            uploaded_files = request.files.getlist('files')
-            if not uploaded_files or uploaded_files[0].filename == '':
-                return "कोई फाइल नहीं चुनी गई! <a href='/service/print'>वापस जाएं</a>"
-            for file in uploaded_files:
-                if file and file.filename != '':
-                    if not allowed_file(file.filename):
-                        return "<h3>त्रुटि: अमान्य फाइल फॉर्मेट! आप केवल PDF या इमेज फाइल ही अपलोड कर सकते हैं। वीडियो या अन्य फाइल प्रतिबंधित हैं।</h3><a href='/service/print'>वापस जाएं</a>"
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-                    file.save(file_path)
-                    saved_file_filenames.append(file.filename)
-            cust_name, cust_mobile, cust_email = "सामान्य ग्राहक", "लागू नहीं", "लागू नहीं"
-            amount = 10 * len(saved_file_filenames)
-        else:
-            cust_name = request.form.get('cust_name')
-            cust_mobile = request.form.get('cust_mobile')
-            cust_email = request.form.get('cust_email')
-            
-            files_to_check = [request.files.get('file_aadhar'), request.files.get('file_other'), 
-                              request.files.get('file_col1'), request.files.get('file_col2'), 
-                              request.files.get('file_col3'), request.files.get('file_col4')]
-            
-            for file in files_to_check:
-                if file and file.filename != '':
-                    if not allowed_file(file.filename):
-                        return "<h3>त्रुटि: अमान्य फाइल फॉर्मेट! आप केवल PDF या इमेज फाइल ही अपलोड कर सकते हैं। वीडियो या अन्य फाइल प्रतिबंधित हैं।</h3><a href='/'>वापस जाएं</a>"
-                    file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-                    file.save(file_path)
-                    saved_file_filenames.append(file.filename)
-
-            if service_type == 'pan': amount = 200
-            elif service_type == 'pvc_aadhar': amount = 100
-            elif service_type in ['bonafide', 'caste']: amount = 50
-            elif service_type in ['farmer', 'jan_aadhaar']: amount = 50
-            else: amount = 40
-
-        upi_link = f"upi://pay?pa={UPI_ID}&pn={MERCHANT_NAME}&am={amount}&cu=INR"
-        qr_api_url = f"https://api.qrserver.com/v1/create-qr-code/?size=220x220&data={upi_link}"
-        filenames_string = ",".join(saved_file_filenames)
-
-        return render_template_string('''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>स्कैन करके पेमेंट करें</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body { font-family: Arial, sans-serif; background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('/kiosk-image/bc.jpg') no-repeat center center fixed; background-size: cover; padding: 20px; text-align: center; min-height: 100vh; }
-                .card { background: rgba(255, 255, 255, 0.95); max-width: 400px; margin: auto; padding: 20px; border-radius: 12px; box-shadow: 0px 0px 15px rgba(0,0,0,0.3); }
-                h2 { font-family: 'Britannic Bold', Arial, sans-serif; color: #2c3e50; }
-                .btn-wait { background-color: #ffc107; color: #333; border: none; padding: 12px 20px; font-size: 16px; border-radius: 5px; width: 100%; margin-top: 15px; font-weight: bold; cursor: pointer; font-family: 'Britannic Bold', Arial, sans-serif;}
-            </style>
-        </head>
-        <body>
-            <div class="card">
-                <h2>💳 SCAN & PAY</h2>
-                <p><b>सेवा:</b> <span style="text-transform:uppercase; color:#007BFF; font-family:'Britannic Bold', Arial, sans-serif;">{{ service_type }}</span></p>
-                <p><b>कुल राशि:</b> <span style="font-size: 26px; color: #d9534f; font-family:'Britannic Bold', Arial, sans-serif;">₹{{ amount }}</span></p>
-                <img src="{{ qr_url }}" alt="UPI QR Code" style="border: 2px solid #ddd; border-radius: 8px; padding: 5px; background: white;">
-                <form action="/submit-request" method="POST">
-                    <input type="hidden" name="filenames" value="{{ filenames_string }}">
-                    <input type="hidden" name="amount" value="{{ amount }}">
-                    <input type="hidden" name="service_type" value="{{ service_type }}">
-                    <input type="hidden" name="cust_name" value="{{ cust_name }}">
-                    <input type="hidden" name="cust_mobile" value="{{ cust_mobile }}">
-                    <input type="hidden" name="cust_email" value="{{ cust_email }}">
-                    <button type="submit" class="btn-wait">⏳ मैंने पेमेंट कर दिया है, सूचना भेजें</button>
-                </form>
-            </div>
-        </body>
-        </html>
-        ''', amount=amount, qr_url=qr_api_url, filenames_string=filenames_string, service_type=service_type, cust_name=cust_name, cust_mobile=cust_mobile, cust_email=cust_email)
-    except Exception as e:
-        return f"<h3>त्रुटि: {e}</h3><a href='/'>होम पेज जाएं</a>"
+    # यहाँ आपकी सर्विस के फॉर्म रेंडर होंगे
+    return redirect(url_for('home'))
 
 @app.route('/submit-request', methods=['POST'])
 def submit_request():
     try:
-        request_data = {
-            'id': len(pending_requests) + 1, 
-            'filenames': request.form.get('filenames'), 
-            'amount': request.form.get('amount'),
-            'service_type': request.form.get('service_type'),
-            'cust_name': request.form.get('cust_name'),
-            'cust_mobile': request.form.get('cust_mobile'),
-            'cust_email': request.form.get('cust_email')
+        service_type = request.form.get('service_type', 'General')
+        cust_name = request.form.get('cust_name', 'सामान्य ग्राहक')
+        cust_mobile = request.form.get('cust_mobile', 'लागू नहीं')
+        cust_email = request.form.get('cust_email', 'लागू नहीं')
+        amount = request.form.get('amount', '0')
+        filenames = request.form.get('filenames', 'कोई फाइल नहीं')
+        
+        # गूगल शीट पर डेटा भेजने के लिए पेलोड
+        payload = {
+            "sheetName": "New",
+            "cust_name": cust_name,
+            "cust_mobile": cust_mobile,
+            "cust_email": cust_email,
+            "service_type": service_type,
+            "amount": amount,
+            "filenames": filenames,
+            "status": "Pending (पेंडिंग)"
         }
-        pending_requests.append(request_data)
+
+        # गूगल एप्स स्क्रिप्ट को डेटा भेजना
+        requests.post(GOOGLE_SCRIPT_URL, json=payload)
+
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:20px; background:rgba(255,255,255,0.95); max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.3);">
-                <h2 style="color:#d9534f; font-family:'Britannic Bold', Arial, sans-serif;">⏳ PAYMENT NOTIFIED!</h2>
-                <p style="font-size:18px;">कृपया पुष्टि के लिए <b>7610967507</b> पर व्हाट्सएप मैसेज या कॉल करें।</p>
-                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px; font-family:'Britannic Bold', Arial, sans-serif;">HOME PAGE</a>
+                <h2 style="color:#28a745; font-family:'Britannic Bold', Arial, sans-serif;">✅ REQUEST SUBMITTED!</h2>
+                <p style="font-size:16px;">आपका डेटा सफलतापर्वूक ऑनलाइन गूगल शीट में दर्ज हो गया है।</p>
+                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">HOME PAGE</a>
             </div>
         '''
     except Exception as e:
         return f"<h3>एरर: {e}</h3><a href='/'>वापस जाएं</a>"
 
-@app.route('/admin-login', methods=['GET', 'POST'])
-def admin_login():
-    error_msg = ""
-    if request.method == 'POST':
-        if request.form.get('password') == '1234': 
-            session['admin_logged_in'] = True
-            return redirect(url_for('admin_panel'))
-        else:
-            error_msg = "❌ गलत पासवर्ड! दोबारा कोशिश करें।"
-            
-    return '''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>दुकानदार लॉगिन</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body { font-family: Arial, sans-serif; background: #222; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-                .login-card { background: #333; padding: 30px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.5); width: 300px; text-align: center; }
-                h2 { font-family: 'Britannic Bold', Arial, sans-serif; }
-                input { width: 100%; padding: 10px; margin: 15px 0; font-size: 16px; border-radius: 5px; border: none; box-sizing: border-box; }
-                button { width: 100%; padding: 10px; background: #28a745; color: white; border: none; font-size: 16px; font-weight: bold; border-radius: 5px; cursor: pointer; font-family: 'Britannic Bold', Arial, sans-serif; }
-                .error { color: #ff6b6b; font-size: 14px; margin-bottom: 10px; }
-            </style>
-        </head>
-        <body>
-            <div class="login-card">
-                <h2>🔐 ADMIN LOGIN</h2>
-                <div class="error">''' + error_msg + '''</div>
-                <form method="POST">
-                    <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" required autofocus>
-                    <button type="submit">लॉगिन करें</button>
-                </form>
-            </div>
-        </body>
-        </html>
-    '''
-
-@app.route('/admin-panel')
-def admin_panel():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    
-    try:
-        is_current_online = get_shop_status()
-        status_btn_text = "🔴 दुकान बंद करें (OFFLINE)" if is_current_online else "🟢 दुकान चालू करें (ONLINE)"
-        status_btn_color = "#d9534f" if is_current_online else "#28a745"
-        current_notice = get_shop_notice()
-
-        cards_html = ""
-        if not pending_requests:
-            cards_html = "<p style='color: #ddd; font-size: 18px;'>अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</p>"
-        else:
-            for idx, req in enumerate(pending_requests):
-                files_list = req['filenames'].split(',')
-                download_links = "".join([f'<a href="/uploads/{f.strip()}" style="color:#00bcd4; margin-right:8px; text-decoration:underline; font-size:13px;">📥 फाइल {i}</a><br>' for i, f in enumerate(files_list, 1)])
-                
-                cust_info_block = ""
-                if req['service_type'] != 'print':
-                    cust_info_block = f'''
-                        <p style="margin: 5px 0;"><b>आवेदक:</b> <span style="color:#00e676;">{req['cust_name']}</span></p>
-                        <p style="margin: 5px 0;"><b>मोबाइल:</b> <span style="color:#ffeb3b;">{req['cust_mobile']}</span></p>
-                        <p style="margin: 5px 0;"><b>जीमेल:</b> <span style="color:#ff9800; font-size:12px;">{req['cust_email']}</span></p>
-                    '''
-
-                cards_html += f'''
-                    <div style="background: rgba(0, 0, 0, 0.9); padding: 15px; width: 300px; border-radius: 10px; border-left: 5px solid #28a745; text-align: left; box-shadow: 0 4px 10px rgba(0,0,0,0.5);">
-                        <p style="margin: 5px 0;"><b>रिक्वेस्ट नंबर:</b> #{req['id']}</p>
-                        <p style="margin: 5px 0;"><b>सेवा प्रकार:</b> <span style="color:#ffeb3b; text-transform:uppercase; font-weight:bold; font-family:'Britannic Bold', Arial, sans-serif;">{req['service_type']}</span></p>
-                        {cust_info_block}
-                        <p style="margin: 5px 0;"><b>रुपया प्राप्त:</b> <span style="color:#4cd137; font-family:'Britannic Bold', Arial, sans-serif;">₹{req['amount']}</span></p>
-                        <p style="margin: 8px 0 5px 0;"><b>दस्तावेज़ फाइलें:</b><br>{download_links}</p>
-                        <form action="/approve-print" method="POST">
-                            <input type="hidden" name="req_index" value="{idx}">
-                            <button type="submit" style="background: #28a745; color: white; border: none; padding: 8px 10px; font-size: 14px; border-radius: 5px; cursor: pointer; width: 100%; font-weight: bold; margin-top: 8px; font-family:'Britannic Bold', Arial, sans-serif;">✅ काम पूरा हुआ / अप्रूव करें</button>
-                        </form>
-                    </div>
-                '''
-
-        return f'''
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>BHUARKARKA - एडमिन पैनल</title>
-            <meta name="viewport" content="width=device-width, initial-scale=1">
-            <style>
-                body {{ font-family: Arial, sans-serif; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; background-size: cover; color: #fff; padding: 15px; text-align: center; min-height: 100vh; }}
-                h2 {{ font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 1px; }}
-                .requests-container {{ display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; margin-top: 20px; }}
-                .control-box {{ background: rgba(0,0,0,0.85); padding: 15px; border-radius: 10px; max-width: 400px; margin: 10px auto; border: 1px solid #555; text-align: left; }}
-                textarea {{ width: 100%; height: 70px; padding: 8px; border-radius: 5px; border: 1px solid #ccc; box-sizing: border-box; font-family: Arial; font-size: 14px; margin-top: 5px; }}
-            </style>
-        </head>
-        <body>
-            <h2>🛡️ BHUARKARKA SERVICES - LIVE REQUEST PANEL</h2>
-            
-            <div class="control-box">
-                <p style="margin:0 0 8px 0; font-size:14px; font-weight:bold;">🟢 दुकान की स्थिति बदलें:</p>
-                <form action="/toggle-status" method="POST">
-                    <button type="submit" style="background: {status_btn_color}; color: white; border: none; padding: 10px; font-size: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-family:'Britannic Bold', Arial, sans-serif;">{status_btn_text}</button>
-                </form>
-            </div>
-
-            <div class="control-box">
-                <p style="margin:0 0 5px 0; font-size:14px; font-weight:bold;">📢 होमपेज पर आवश्यक नोट/संदेश अपडेट करें:</p>
-                <form action="/update-notice" method="POST">
-                    <textarea name="notice_text" required>{current_notice}</textarea>
-                    <button type="submit" style="background: #007BFF; color: white; border: none; padding: 8px; font-size: 14px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 8px; font-family:'Britannic Bold', Arial, sans-serif;">💾 नोट सेव करें व लाइव करें</button>
-                </form>
-            </div>
-
-            <h3 style="margin-top: 30px; font-family:'Britannic Bold', Arial, sans-serif;">📥 ग्राहक पेंडिंग रिक्वेस्ट</h3>
-            <div class="requests-container">{cards_html}</div>
-            <br><br>
-            <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold; display: inline-block; font-family:'Britannic Bold', Arial, sans-serif;">🔒 LOGOUT</a>
-        </body>
-        </html>
-        '''
-    except Exception as e:
-        return f"एडमिन पैनल एरर: {e}"
-
-@app.route('/toggle-status', methods=['POST'])
-def toggle_status():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    current_status = get_shop_status()
-    new_status = not current_status
-    set_shop_status(new_status)
-    
-    # अगर दुकान बंद (OFFLINE) की गई है, तो एडमिन को लॉग आउट कर दें
-    if not new_status:
-        session.pop('admin_logged_in', None)
-        return redirect(url_for('admin_login'))
-        
-    return redirect(url_for('admin_panel'))
-
-@app.route('/update-notice', methods=['POST'])
-def update_notice():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    new_notice = request.form.get('notice_text')
-    if new_notice:
-        set_shop_notice(new_notice)
-    return redirect(url_for('admin_panel'))
-
-@app.route('/admin-logout')
-def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect(url_for('admin_login'))
-
 @app.errorhandler(404)
 def handle_404(e):
     return redirect(url_for('home'))
 
-@app.route('/approve-print', methods=['POST'])
-def approve_print():
-    if not session.get('admin_logged_in'):
-        return redirect(url_for('admin_login'))
-    try:
-        req_index = int(request.form.get('req_index'))
-        if 0 <= req_index < len(pending_requests):
-            pending_requests.pop(req_index)
-            return "<h3 style='color:green; text-align:center; margin-top:50px; background:white; padding:20px; max-width:400px; margin:50px auto; border-radius:10px; font-family:Arial;'>🎉 रिक्वेस्ट पूरी कर दी गई है! <a href='/admin-panel' style='color:#007BFF;'>पाछा एडमिन पैनल में जाओ</a></h3>"
-        return "रिक्वेस्ट पहले ही हटाई जा चुकी है! <a href='/admin-panel'>पाछा जाओ</a>"
-    except Exception as e:
-        return f"<h3>एरर: {e}</h3><a href='/admin-panel'>पाछा जाओ</a>"
-
 if __name__ == '__main__':
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
-    print(f"\n👉 ग्राहक लिंक: http://{local_ip}:5000")
-    print(f"👉 मोबाइल एडमिन पैनल लिंक: http://{local_ip}:5000/admin-panel (पासवर्ड: 1234)\n")
     app.run(host='0.0.0.0', port=5000)
