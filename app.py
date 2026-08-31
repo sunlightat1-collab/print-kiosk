@@ -1,7 +1,9 @@
-from flask import Flask, request, render_template_string, send_from_directory, redirect, url_for
+from flask import Flask, request, render_template_string, send_from_directory, redirect, url_for, session, Response
 import os
 import requests
 import json
+import csv
+import io
 
 app = Flask(__name__)
 app.secret_key = 'prakash_print_kiosk_secret_key'
@@ -14,7 +16,8 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 
-# --- Google Apps Script Web App URL ---
+# --- Google Apps Script Web App URLs ---
+# (डेटा भेजने और पढ़ने के लिए मुख्य वेब ऐप लिंक)
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxFyfYjTV3F5MWDHKZLKQTop6sUP4-msknhe96aJPOKJsPWxw7JtCwtIrp3HOelC_9tOA/exec"
 
 def get_shop_status():
@@ -23,11 +26,19 @@ def get_shop_status():
     with open(STATUS_FILE, 'r') as f:
         return f.read().strip() == 'ON'
 
+def set_shop_status(status):
+    with open(STATUS_FILE, 'w') as f:
+        f.write('ON' if status else 'OFF')
+
 def get_shop_notice():
     if not os.path.exists(NOTICE_FILE):
         return "🙏 BHUARKARKA SERVICES में आपका स्वागत है! सभी प्रकार के ऑनलाइन फॉर्म व प्रिंटिंग यहाँ उपलब्ध हैं।"
     with open(NOTICE_FILE, 'r', encoding='utf-8') as f:
         return f.read().strip()
+
+def set_shop_notice(notice):
+    with open(NOTICE_FILE, 'w', encoding='utf-8') as f:
+        f.write(notice)
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
@@ -95,13 +106,108 @@ HTML_HOME = '''
 </html>
 '''
 
+HTML_ADMIN = '''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BHUARKARKA - एडमिन पैनल</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: Arial, sans-serif; background: #2c3e50; color: #fff; padding: 15px; margin: 0; }
+        .container { max-width: 800px; margin: auto; }
+        h2 { text-align: center; color: #f1c40f; }
+        .card { background: #34495e; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .btn { display: inline-block; padding: 8px 15px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; margin: 5px 2px; }
+        .btn-danger { background: #c0392b; }
+        .btn-info { background: #2980b9; }
+        .btn-warning { background: #d35400; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; background: #fff; color: #333; border-radius: 5px; overflow: hidden; }
+        th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
+        th { background: #2980b9; color: white; }
+        textarea { width: 100%; height: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; }
+        .download-section { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>🛡️ BHUARKARKA SERVICES - ADMIN PANEL 🛡️</h2>
+        
+        <!-- दुकान स्टेटस कंट्रोल -->
+        <div class="card">
+            <h3> दुकान की स्थिति बदलें:</h3>
+            {% if is_online %}
+                <p style="color: #2ecc71; font-weight: bold;">स्थिति: खुली है (ONLINE)</p>
+                <a href="/admin/toggle-status" class="btn btn-danger">🔴 दुकान बंद करें (OFFLINE)</a>
+            {% else %}
+                <p style="color: #e74c3c; font-weight: bold;">स्थिति: बंद है (OFFLINE)</p>
+                <a href="/admin/toggle-status" class="btn">🟢 दुकान चालू करें (ONLINE)</a>
+            {% endif %}
+        </div>
+
+        <!-- नोटिस अपडेट -->
+        <div class="card">
+            <h3>📢 होमपेज नोटिस अपडेट करें:</h3>
+            <form method="POST" action="/admin/update-notice">
+                <textarea name="notice">{{ notice }}</textarea>
+                <button type="submit" class="btn btn-info" style="margin-top: 8px;">💾 नोट सेव करें व लाइव करें</button>
+            </form>
+        </div>
+
+        <!-- रिपोर्ट डाउनलोड विकल्प -->
+        <div class="card" style="text-align: center;">
+            <h3>📥 एक्सेल रिपोर्ट डाउनलोड करें</h3>
+            <div class="download-section">
+                <a href="/admin/download/New" class="btn btn-info">📄 नए आवेदन डाउनलोड करें</a>
+                <a href="/admin/download/Accepted" class="btn btn-warning">📑 मंजूर आवेदन डाउनलोड करें</a>
+                <a href="/admin/download/Completed" class="btn">✅ पूर्ण कार्य डाउनलोड करें</a>
+            </div>
+        </div>
+
+        <!-- पेंडिंग रिक्वेस्ट लिस्ट -->
+        <div class="card">
+            <h3>⏳ ग्राहक पेंडिंग रिक्वेस्ट (New)</h3>
+            <div style="overflow-x: auto;">
+                <table>
+                    <tr>
+                        <th>नाम</th>
+                        <th>मोबाइल</th>
+                        <th>सेवा</th>
+                        <th>राशि</th>
+                        <th>फाइलें</th>
+                        <th>स्टेटस</th>
+                    </tr>
+                    {% if requests_list %}
+                        {% for req in requests_list %}
+                        <tr>
+                            <td>{{ req[0] }}</td>
+                            <td>{{ req[1] }}</td>
+                            <td>{{ req[3] }}</td>
+                            <td>₹{{ req[4] }}</td>
+                            <td><a href="/uploads/{{ req[5] }}" target="_blank">फाइल देखें</a></td>
+                            <td>{{ req[6] }}</td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="6" style="text-align:center;">अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</td></tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="/admin/logout" class="btn btn-danger">🔒 LOGOUT</a>
+        </div>
+    </div>
+</body>
+</html>
+'''
+
 @app.route('/')
 def home():
     return render_template_string(HTML_HOME, is_online=get_shop_status(), notice=get_shop_notice())
 
 @app.route('/service/<service_name>')
 def service_page(service_name):
-    # यहाँ आपकी सर्विस के फॉर्म रेंडर होंगे
     return redirect(url_for('home'))
 
 @app.route('/submit-request', methods=['POST'])
@@ -114,7 +220,6 @@ def submit_request():
         amount = request.form.get('amount', '0')
         filenames = request.form.get('filenames', 'कोई फाइल नहीं')
         
-        # गूगल शीट पर डेटा भेजने के लिए पेलोड
         payload = {
             "sheetName": "New",
             "cust_name": cust_name,
@@ -126,7 +231,6 @@ def submit_request():
             "status": "Pending (पेंडिंग)"
         }
 
-        # गूगल एप्स स्क्रिप्ट को डेटा भेजना
         requests.post(GOOGLE_SCRIPT_URL, json=payload)
 
         return '''
@@ -138,6 +242,83 @@ def submit_request():
         '''
     except Exception as e:
         return f"<h3>एरर: {e}</h3><a href='/'>वापस जाएं</a>"
+
+# --- Admin Routes ---
+@app.route('/admin-panel', methods=['GET', 'POST'])
+def admin_panel():
+    if not session.get('logged_in'):
+        if request.method == 'POST':
+            if request.form.get('password') == '7610':  # आपका एडमिन पासवर्ड
+                session['logged_in'] = True
+                return redirect(url_for('admin_panel'))
+            else:
+                return '''<script>alert("गलत पासवर्ड!"); window.location="/admin-panel";</script>'''
+        return '''
+        <!DOCTYPE html>
+        <html>
+        <head><title>Admin Login</title><meta name="viewport" content="width=device-width, initial-scale=1"></head>
+        <body style="background:#2c3e50; color:white; font-family:Arial; text-align:center; padding-top:100px;">
+            <h2>🔐 BHUARKARKA ADMIN LOGIN</h2>
+            <form method="POST">
+                <input type="password" name="password" placeholder="पासवर्ड दर्ज करें" style="padding:10px; font-size:16px; border-radius:5px; border:none; text-align:center;" required><br><br>
+                <button type="submit" style="padding:10px 20px; background:#27ae60; color:white; border:none; font-size:16px; border-radius:5px; cursor:pointer;">LOGIN</button>
+            </form>
+        </body>
+        </html>
+        '''
+    
+    # गूगल शीट से 'New' टैब का डेटा लाना
+    requests_list = []
+    try:
+        res = requests.get(GOOGLE_SCRIPT_URL + "?action=get_data&sheetName=New")
+        if res.status_code == 200:
+            requests_list = res.json()
+    except:
+        pass
+
+    return render_template_string(HTML_ADMIN, is_online=get_shop_status(), notice=get_shop_notice(), requests_list=requests_list)
+
+@app.route('/admin/toggle-status')
+def toggle_status():
+    if session.get('logged_in'):
+        set_shop_status(not get_shop_status())
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/update-notice', methods=['POST'])
+def update_notice():
+    if session.get('logged_in'):
+        set_shop_notice(request.form.get('notice', ''))
+    return redirect(url_for('admin_panel'))
+
+@app.route('/admin/download/<sheet_name>')
+def download_report(sheet_name):
+    if not session.get('logged_in'):
+        return redirect(url_for('admin_panel'))
+    
+    try:
+        res = requests.get(GOOGLE_SCRIPT_URL + f"?action=get_data&sheetName={sheet_name}")
+        data = res.json() if res.status_code == 200 else []
+        
+        # CSV फाइल जनरेट करना ताकि सीधे एक्सेल में डाउनलोड हो सके
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(['Name', 'Mobile', 'Email', 'Service', 'Amount', 'Files', 'Status'])
+        for row in data:
+            writer.writerow(row)
+        
+        output.seek(0)
+        return Response(
+            output,
+            mimetype="text/csv",
+            headers={"Content-Disposition": f"attachment;filename={sheet_name}_Report.csv"}
+        )
+    except Exception as e:
+        return f"Download Error: {e}"
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('logged_in', None)
+    return redirect(url_for('home'))
 
 @app.errorhandler(404)
 def handle_404(e):
