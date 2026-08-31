@@ -1,9 +1,6 @@
 from flask import Flask, request, render_template_string, send_from_directory, redirect, url_for, session
 import os
 import socket
-import time
-import threading
-import urllib.request
 
 app = Flask(__name__)
 app.secret_key = 'prakash_print_kiosk_secret_key'
@@ -13,19 +10,23 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+STATUS_FILE = 'shop_status.txt'
+
+# दुकान की स्थिति चेक करने का फंक्शन
+def get_shop_status():
+    if not os.path.exists(STATUS_FILE):
+        return True # डिफ़ॉल्ट रूप से खुली रहेगी
+    with open(STATUS_FILE, 'r') as f:
+        return f.read().strip() == 'ON'
+
+def set_shop_status(status):
+    with open(STATUS_FILE, 'w') as f:
+        f.write('ON' if status else 'OFF')
+
 UPI_ID = "Q508475385@ybl"
 MERCHANT_NAME = "BHUARKARKA SERVICES"
 
 pending_requests = []
-
-# असली इंटरनेट कनेक्शन चेक करने वाला फंक्शन
-def check_real_internet():
-    try:
-        # गूगल या किसी भरोसेमंद वेबसाइट से कनेक्ट करके देखता है कि नेट चालू है या नहीं
-        urllib.request.urlopen('https://www.google.com', timeout=3)
-        return True
-    except:
-        return False
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
@@ -91,7 +92,7 @@ HTML_HOME = '''
         .status-dot-offline {
             height: 12px;
             width: 12px;
-            background-color: #222222; /* ब्लैक लाइट */
+            background-color: #222222;
             border-radius: 50%;
             display: inline-block;
             margin-right: 8px;
@@ -143,7 +144,7 @@ HTML_HOME = '''
             letter-spacing: 0.5px;
         }
     </style>
-    <!-- होम पेज को ऑटोमैटिक अपडेट करने के लिए स्क्रिप्ट -->
+    <!-- लाइव स्टेटस अपडेट स्क्रिप्ट -->
     <script>
         setInterval(function() {
             fetch('/check-status')
@@ -156,7 +157,7 @@ HTML_HOME = '''
                     statusDiv.innerHTML = '<span class="status-dot-offline"></span> दुकान बंद है (OFFLINE)';
                 }
             });
-        }, 5000); // हर 5 सेकंड में चेक करेगा
+        }, 3000);
     </script>
 </head>
 <body>
@@ -214,13 +215,11 @@ HTML_HOME = '''
 
 @app.route('/check-status')
 def check_status():
-    # यह फंक्शन असली इंटरनेट कनेक्शन की जाँच करेगा
-    is_online = check_real_internet()
-    return {'is_online': is_online}
+    return {'is_online': get_shop_status()}
 
 @app.route('/')
 def home():
-    is_online = check_real_internet()
+    is_online = get_shop_status()
     return render_template_string(HTML_HOME, is_online=is_online)
 
 
@@ -588,6 +587,10 @@ def admin_panel():
         return redirect(url_for('admin_login'))
     
     try:
+        is_current_online = get_shop_status()
+        status_btn_text = "🔴 दुकान बंद करें (OFFLINE)" if is_current_online else "🟢 दुकान चालू करें (ONLINE)"
+        status_btn_color = "#d9534f" if is_current_online else "#28a745"
+
         cards_html = ""
         if not pending_requests:
             cards_html = "<p style='color: #ddd; font-size: 18px;'>अभी कोई नई सर्विस रिक्वेस्ट नहीं है...</p>"
@@ -618,7 +621,7 @@ def admin_panel():
                     </div>
                 '''
 
-        return '''
+        return f'''
         <!DOCTYPE html>
         <html>
         <head>
@@ -626,14 +629,24 @@ def admin_panel():
             <meta name="viewport" content="width=device-width, initial-scale=1">
             <meta http-equiv="refresh" content="3">
             <style>
-                body { font-family: Arial, sans-serif; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; background-size: cover; color: #fff; padding: 15px; text-align: center; min-height: 100vh; }
-                h2 { font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 1px; }
-                .requests-container { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; margin-top: 20px; }
+                body {{ font-family: Arial, sans-serif; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/kiosk-image/prakash 2.jfif') no-repeat center center fixed; background-size: cover; color: #fff; padding: 15px; text-align: center; min-height: 100vh; }}
+                h2 {{ font-family: 'Britannic Bold', Arial, sans-serif; letter-spacing: 1px; }}
+                .requests-container {{ display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; align-items: flex-start; margin-top: 20px; }}
+                .status-control-box {{ background: rgba(0,0,0,0.8); padding: 15px; border-radius: 10px; max-width: 350px; margin: 10px auto; border: 1px solid #555; }}
             </style>
         </head>
         <body>
             <h2>🛡️ BHUARKARKA SERVICES - LIVE REQUEST PANEL</h2>
-            <div class="requests-container">''' + cards_html + '''</div>
+            
+            <!-- दुकान चालू/बंद करने का स्विच बटन -->
+            <div class="status-control-box">
+                <p style="margin:0 0 10px 0; font-size:14px; font-weight:bold;">दुकान की स्थिति बदलें:</p>
+                <form action="/toggle-status" method="POST">
+                    <button type="submit" style="background: {status_btn_color}; color: white; border: none; padding: 10px 20px; font-size: 15px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%; font-family:'Britannic Bold', Arial, sans-serif;">{status_btn_text}</button>
+                </form>
+            </div>
+
+            <div class="requests-container">{cards_html}</div>
             <br><br>
             <a href="/admin-logout" style="color: #ff6b6b; text-decoration: none; background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 5px; font-weight: bold; display: inline-block; font-family:'Britannic Bold', Arial, sans-serif;">🔒 LOGOUT</a>
         </body>
@@ -641,6 +654,15 @@ def admin_panel():
         '''
     except Exception as e:
         return f"एडमिन पैनल एरर: {e}"
+
+
+@app.route('/toggle-status', methods=['POST'])
+def toggle_status():
+    if not session.get('admin_logged_in'):
+        return redirect(url_for('admin_login'))
+    current_status = get_shop_status()
+    set_shop_status(not current_status)
+    return redirect(url_for('admin_panel'))
 
 
 @app.route('/admin-logout')
