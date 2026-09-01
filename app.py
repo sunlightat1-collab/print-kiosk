@@ -17,6 +17,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
+SERVICES_FILE = 'services.json'
 
 # ⚠️ गूगल एप्स स्क्रिप्ट URL
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHmjYi-XPpPe5fw96Z4IjdBsGxYKmbPuhdO-Oa0u01mkjmUM9NUcw/exec"
@@ -24,6 +25,33 @@ GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHm
 # 🟢 आपकी UPI आईडी
 OWNER_UPI_ID = "Q508475385@ybl" 
 OWNER_NAME = "BHUARKARKA SERVICES"
+
+# डिफ़ॉल्ट सर्विस कार्ड्स की लिस्ट
+DEFAULT_SERVICES = [
+    {"id": "pan", "title": "PAN CARD (₹200)", "service_name": "PAN Card Application", "fee": 200, "emoji": "💳", "note": "आवेदक का आधार कार्ड, 10वीं मार्कशीट जरूरी है।", "extra_label": "आधार नंबर / अन्य जानकारी"},
+    {"id": "pvc_aadhar", "title": "PVC AADHAR (₹100)", "service_name": "PVC Aadhar Card", "fee": 100, "emoji": "🪪", "note": "आवश्यक विवरण दर्ज करें।", "extra_label": "आधार नंबर"},
+    {"id": "voter", "title": "VOTER CARD (₹100)", "service_name": "Voter Card", "fee": 100, "emoji": "🗳️", "note": "वोटर कार्ड हेतु आवश्यक दस्तावेज अपलोड करें।", "extra_label": "Epic नंबर / विवरण"},
+    {"id": "farmer", "title": "FARMER ID (₹100)", "service_name": "Farmer ID", "fee": 100, "emoji": "🌽", "note": "", "extra_label": "किसान आईडी विवरण"},
+    {"id": "shramik", "title": "SHRAMIK CARD (₹200)", "service_name": "Shramik Card", "fee": 200, "emoji": "👷", "note": "", "extra_label": "श्रमिक कार्ड विवरण"},
+    {"id": "jan_aadhaar", "title": "JAN AADHAAR (₹50)", "service_name": "Jan Aadhar Card", "fee": 50, "emoji": "🆔", "note": "", "extra_label": "जन आधार नंबर"},
+    {"id": "jan_aadhaar_pvc", "title": "JAN AADHAAR PVC (₹100)", "service_name": "Jan Aadhar PVC Card", "fee": 100, "emoji": "🪪", "note": "", "extra_label": "जन आधार नंबर"},
+    {"id": "ayushman", "title": "AYUSHMAN CARD (₹100)", "service_name": "Ayushman Card", "fee": 100, "emoji": "🏥", "note": "", "extra_label": "आयुष्मान कार्ड विवरण"}
+]
+
+def get_services():
+    if not os.path.exists(SERVICES_FILE):
+        with open(SERVICES_FILE, 'w', encoding='utf-8') as f:
+            json.dump(DEFAULT_SERVICES, f, ensure_ascii=False, indent=4)
+        return DEFAULT_SERVICES
+    try:
+        with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return DEFAULT_SERVICES
+
+def save_services(services):
+    with open(SERVICES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(services, f, ensure_ascii=False, indent=4)
 
 def get_shop_status():
     if not os.path.exists(STATUS_FILE):
@@ -49,23 +77,19 @@ def set_shop_notice(notice):
 def uploaded_file(filename):
     clean_req_name = urllib.parse.unquote(filename).strip()
     
-    # 1. uploads फोल्डर में सर्च करें
     file_path_uploads = os.path.join(app.config['UPLOAD_FOLDER'], clean_req_name)
     if os.path.exists(file_path_uploads):
         return send_from_directory(app.config['UPLOAD_FOLDER'], clean_req_name, as_attachment=clean_req_name.lower().endswith('.pdf'))
     
-    # 2. रूट (Main) फोल्डर में सर्च करें (चूँकि GitHub पर फाइलें रूट में हैं)
     if os.path.exists(clean_req_name):
         return send_from_directory('.', clean_req_name, as_attachment=clean_req_name.lower().endswith('.pdf'))
 
-    # 3. दोनों फोल्डर (uploads और .) में केस-इन्सेंसिटिव सर्च
     for folder in [app.config['UPLOAD_FOLDER'], '.']:
         if os.path.exists(folder):
             for f in os.listdir(folder):
                 if f.lower() == clean_req_name.lower():
                     return send_from_directory(folder, f, as_attachment=f.lower().endswith('.pdf'))
 
-    # 4. स्मार्ट नाम मैचिंग (Fuzzy Search)
     req_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_req_name.lower())
     if len(req_slug) > 3:
         for folder in [app.config['UPLOAD_FOLDER'], '.']:
@@ -133,16 +157,15 @@ HTML_HOME = """
         <p style="color: #fff; margin-bottom: 20px; font-weight: bold;">कृपया अपनी सेवा चुनें:</p>
         <div class="app-grid">
             <a href="/service/print" class="app-icon-card"><div class="emoji">📄</div><div class="title-text">SELF PRINT</div></a>
-            <a href="/service/pan" class="app-icon-card"><div class="emoji">💳</div><div class="title-text">PAN CARD (₹200)</div></a>
-            <a href="/service/pvc_aadhar" class="app-icon-card"><div class="emoji">🪪</div><div class="title-text">PVC AADHAR (₹100)</div></a>
-            <a href="/service/voter" class="app-icon-card"><div class="emoji">🗳️</div><div class="title-text">VOTER CARD (₹100)</div></a>
             <a href="/service/bonafide" class="app-icon-card"><div class="emoji">📜</div><div class="title-text">मूल निवास प्रमाण पत्र</div></a>
             <a href="/service/caste" class="app-icon-card"><div class="emoji">📑</div><div class="title-text">जाति प्रमाण पत्र</div></a>
-            <a href="/service/farmer" class="app-icon-card"><div class="emoji">🌽</div><div class="title-text">FARMER ID (₹100)</div></a>
-            <a href="/service/shramik" class="app-icon-card"><div class="emoji">👷</div><div class="title-text">SHRAMIK CARD (₹200)</div></a>
-            <a href="/service/jan_aadhaar" class="app-icon-card"><div class="emoji">🆔</div><div class="title-text">JAN AADHAAR (₹50)</div></a>
-            <a href="/service/jan_aadhaar_pvc" class="app-icon-card"><div class="emoji">🪪</div><div class="title-text">JAN AADHAAR PVC (₹100)</div></a>
-            <a href="/service/ayushman" class="app-icon-card"><div class="emoji">🏥</div><div class="title-text">AYUSHMAN CARD (₹100)</div></a>
+            
+            {% for card in dynamic_services %}
+            <a href="/service/{{ card.id }}" class="app-icon-card">
+                <div class="emoji">{{ card.emoji }}</div>
+                <div class="title-text">{{ card.title }}</div>
+            </a>
+            {% endfor %}
         </div>
     </div>
 </body>
@@ -167,8 +190,10 @@ HTML_ADMIN = """
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; background: #fff; color: #333; border-radius: 5px; overflow: hidden; }
         th, td { padding: 8px; border: 1px solid #ddd; text-align: left; }
         th { background: #2980b9; color: white; }
-        textarea { width: 100%; height: 60px; padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-top: 5px; box-sizing: border-box; }
+        textarea, input[type="text"], input[type="number"] { width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ccc; margin-top: 4px; margin-bottom: 10px; box-sizing: border-box; }
         .download-section { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 15px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        @media(max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -192,6 +217,62 @@ HTML_ADMIN = """
                 <textarea name="notice">{{ notice }}</textarea>
                 <button type="submit" class="btn btn-info" style="margin-top: 8px; padding: 8px 15px;">💾 नोट सेव करें व लाइव करें</button>
             </form>
+        </div>
+
+        <!-- 🆕 सर्विस कार्ड जोड़ने व डिलीट करने का नया सेक्शन -->
+        <div class="card">
+            <h3>➕ नया सर्विस कार्ड जोड़ें (Add New Card):</h3>
+            <form method="POST" action="/admin/add-service">
+                <div class="form-grid">
+                    <div>
+                        <label>इमोजी (Emoji):</label>
+                        <input type="text" name="emoji" placeholder="जैसे: 💳, 🪪, 📄" required>
+                    </div>
+                    <div>
+                        <label>कार्ड टाइटल (होमपेज हेतु):</label>
+                        <input type="text" name="title" placeholder="जैसे: E-SHRAM CARD (₹100)" required>
+                    </div>
+                    <div>
+                        <label>सर्विस नाम (गूगल शीट हेतु):</label>
+                        <input type="text" name="service_name" placeholder="जैसे: E-Shram Card Application" required>
+                    </div>
+                    <div>
+                        <label>फीस राशि (₹):</label>
+                        <input type="number" name="fee" value="100" required>
+                    </div>
+                </div>
+                <label>निर्देश / नोट (ऐच्छिक):</label>
+                <input type="text" name="note" placeholder="जैसे: आधार कार्ड और मोबाइल नंबर अनिवार्य है">
+                
+                <label>अतिरिक्त फील्ड लेबल (Input Field Name):</label>
+                <input type="text" name="extra_label" placeholder="जैसे: आधार नंबर / मोबाइल नंबर" required>
+
+                <button type="submit" class="btn" style="padding: 10px 18px; font-size: 14px; margin-top: 5px;">✨ नया कार्ड जोड़ें</button>
+            </form>
+
+            <h4 style="margin-top:20px; color:#f1c40f;">📋 मौजूदा सर्विस कार्ड्स:</h4>
+            <div style="overflow-x: auto;">
+                <table>
+                    <tr>
+                        <th>इमोजी</th>
+                        <th>टाइटल</th>
+                        <th>फीस</th>
+                        <th>इनपुट लेबल</th>
+                        <th>एक्शन</th>
+                    </tr>
+                    {% for card in dynamic_services %}
+                    <tr>
+                        <td>{{ card.emoji }}</td>
+                        <td><b>{{ card.title }}</b></td>
+                        <td>₹{{ card.fee }}</td>
+                        <td>{{ card.extra_label }}</td>
+                        <td>
+                            <a href="/admin/delete-service/{{ card.id }}" class="btn btn-danger" onclick="return confirm('क्या आप इस कार्ड को डिलीट करना चाहते हैं?');">🗑️ डिलीट करें</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
         </div>
 
         <div class="card" style="text-align: center;">
@@ -275,9 +356,6 @@ HTML_ADMIN = """
             <a href="/admin/logout" class="btn btn-danger" style="padding: 10px 20px; font-size: 15px;">🔒 LOGOUT</a>
         </div>
     </div>
-    <script>
-        setTimeout(function(){ location.reload(); }, 5000);
-    </script>
 </body>
 </html>
 """
@@ -305,7 +383,7 @@ def render_file_links(file_text):
 
 @app.route('/')
 def home():
-    return render_template_string(HTML_HOME, is_online=get_shop_status(), notice=get_shop_notice())
+    return render_template_string(HTML_HOME, is_online=get_shop_status(), notice=get_shop_notice(), dynamic_services=get_services())
 
 @app.route('/service/<service_name>')
 def service_page(service_name):
@@ -317,7 +395,7 @@ def service_page(service_name):
         <body style="font-family:Arial; background:#f4f4f4; padding:20px; text-align:center;">
             <div style="max-width:400px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); text-align:left;">
                 <h2 style="color:#2c3e50; text-align:center;">📄 SELF PRINT</h2>
-                <p style="font-size:13px; color:#555;">इसमें आवेदक JPG, JPEG, PDF जैसी फाइलें upload कर सकता है तथा अपनी Request submit कर सकता है (बिना पेमेंट किए)।</p>
+                <p style="font-size:13px; color:#555;">इसमें आवेदक JPG, JPEG, PDF जैसी फाइलें upload कर सकता है तथा अपनी Request submit कर सकता है।</p>
                 <form action="/submit-service" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="service_type" value="Self Print">
                     <input type="hidden" name="amount" value="0">
@@ -403,51 +481,29 @@ def service_page(service_name):
         </html>
         ''')
 
-    fees_mapping = {
-        'pan': ('PAN Card Application', 200, True),
-        'pvc_aadhar': ('PVC Aadhar Card', 100, True),
-        'voter': ('Voter Card', 100, True),
-        'farmer': ('Farmer ID', 100, True),
-        'shramik': ('Shramik Card', 200, True),
-        'jan_aadhaar': ('Jan Aadhar Card', 50, True),
-        'jan_aadhaar_pvc': ('Jan Aadhar PVC Card', 100, True),
-        'ayushman': ('Ayushman Card', 100, True)
-    }
-    
-    if service_name not in fees_mapping:
+    # डायनामिक सर्विसेज खोजें
+    services = get_services()
+    target_card = None
+    for card in services:
+        if card['id'] == service_name:
+            target_card = card
+            break
+            
+    if not target_card:
         return redirect(url_for('home'))
         
-    s_title, s_fee, has_file_upload = fees_mapping[service_name]
+    s_title = target_card['service_name']
+    s_fee = target_card['fee']
+    note_text = target_card.get('note', '')
+    extra_label = target_card.get('extra_label', 'आवश्यक जानकारी')
     
-    extra_field_html = ""
     note_html = ""
-    
-    if service_name == 'pan':
-        note_html = """
+    if note_text:
+        note_html = f'''
         <div style="background: #eef9ff; border: 1px solid #bce8f1; padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; color: #31708f;">
-            <b>📌 पैन कार्ड आवेदन के लिए निर्देश:</b><br>
-            आवेदक का <b>आधार कार्ड</b>, <b>10वीं मार्कशीट जरूरी है</b>।
+            <b>📌 निर्देश:</b> {note_text}
         </div>
-        """
-        extra_field_html = """
-        <label><b>आधार नंबर / अन्य जानकारी:</b></label>
-        <input type="text" name="extra_info" placeholder="विवरण दर्ज करें" required>
-        """
-    elif service_name == 'voter':
-        note_html = """
-        <div style="background: #eef9ff; border: 1px solid #bce8f1; padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; color: #31708f;">
-            <b>📌 वोटर कार्ड हेतु निर्देश:</b> आवश्यक दस्तावेज अपलोड करें।
-        </div>
-        """
-        extra_field_html = """
-        <label><b>Epic नंबर / विवरण:</b></label>
-        <input type="text" name="extra_info" placeholder="पुराना वोटर नंबर या विवरण">
-        """
-    else:
-        extra_field_html = """
-        <label><b>आवश्यक जानकारी / नंबर:</b></label>
-        <input type="text" name="extra_info" placeholder="जरूरी जानकारी दर्ज करें">
-        """
+        '''
 
     return render_template_string(f'''
     <!DOCTYPE html>
@@ -481,7 +537,8 @@ def service_page(service_name):
                 <label><b>जीमेल (Email):</b></label>
                 <input type="text" name="cust_email" placeholder="email@gmail.com" required>
 
-                {extra_field_html}
+                <label><b>{extra_label}:</b></label>
+                <input type="text" name="extra_info" placeholder="विवरण दर्ज करें" required>
                 
                 <label><b>दस्तावेज अपलोड करें (मल्टीपल फाइलें):</b></label>
                 <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
@@ -593,7 +650,43 @@ def admin_panel():
     except Exception as e:
         print(f"Fetch Error: {e}")
 
-    return render_template_string(HTML_ADMIN, is_online=get_shop_status(), notice=get_shop_notice(), requests_list=requests_list, accepted_list=accepted_list)
+    return render_template_string(HTML_ADMIN, is_online=get_shop_status(), notice=get_shop_notice(), requests_list=requests_list, accepted_list=accepted_list, dynamic_services=get_services())
+
+# 🆕 नया सर्विस कार्ड जोड़ने का रूट
+@app.route('/admin/add-service', methods=['POST'])
+def add_service():
+    if session.get('logged_in'):
+        title = request.form.get('title')
+        service_name = request.form.get('service_name')
+        fee = int(request.form.get('fee', 0))
+        emoji = request.form.get('emoji', '📄')
+        note = request.form.get('note', '')
+        extra_label = request.form.get('extra_label', 'आवश्यक जानकारी')
+
+        card_id = re.sub(r'[^a-z0-9_]', '', service_name.lower().replace(' ', '_'))
+
+        services = get_services()
+        services.append({
+            "id": card_id,
+            "title": title,
+            "service_name": service_name,
+            "fee": fee,
+            "emoji": emoji,
+            "note": note,
+            "extra_label": extra_label
+        })
+        save_services(services)
+
+    return redirect(url_for('admin_panel'))
+
+# 🆕 कार्ड डिलीट करने का रूट
+@app.route('/admin/delete-service/<card_id>')
+def delete_service(card_id):
+    if session.get('logged_in'):
+        services = get_services()
+        services = [c for c in services if c['id'] != card_id]
+        save_services(services)
+    return redirect(url_for('admin_panel'))
 
 @app.route('/admin/move/<source_sheet>/<target_sheet>/<int:row_index>')
 def move_row(source_sheet, target_sheet, row_index):
