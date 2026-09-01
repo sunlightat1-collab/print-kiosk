@@ -4,6 +4,8 @@ import requests
 import json
 import csv
 import io
+import urllib.parse
+import re
 
 app = Flask(__name__)
 app.secret_key = 'prakash_print_kiosk_secret_key'
@@ -16,7 +18,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 
-# ⚠️ यहाँ अपनी सही Google Apps Script URL डालें
+# ⚠️ गूगल एप्स स्क्रिप्ट URL
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHmjYi-XPpPe5fw96Z4IjdBsGxYKmbPuhdO-Oa0u01mkjmUM9NUcw/exec"
 
 # 🟢 आपकी UPI आईडी
@@ -45,17 +47,36 @@ def set_shop_notice(notice):
 
 @app.route('/uploads/<path:filename>')
 def uploaded_file(filename):
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    clean_req_name = urllib.parse.unquote(filename).strip()
+    
+    # 1. सीधा सर्च
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], clean_req_name)
     if os.path.exists(file_path):
-        if filename.lower().endswith('.pdf'):
-            return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
-        return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-    else:
-        if os.path.exists(filename):
-            if filename.lower().endswith('.pdf'):
-                return send_from_directory('.', filename, as_attachment=True)
-            return send_from_directory('.', filename)
-    return redirect(url_for('home'))
+        return send_from_directory(app.config['UPLOAD_FOLDER'], clean_req_name, as_attachment=clean_req_name.lower().endswith('.pdf'))
+    
+    # 2. स्पेस को अंडरस्कोर से बदलकर सर्च
+    alt_name1 = clean_req_name.replace(' ', '_')
+    if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], alt_name1)):
+        return send_from_directory(app.config['UPLOAD_FOLDER'], alt_name1, as_attachment=alt_name1.lower().endswith('.pdf'))
+
+    # 3. यदि नाम कौमा/स्पेस से टूटा हुआ है तो UPLOAD फोल्डर में सबसे नजदीकी फाइल ढूंढना
+    if os.path.exists(app.config['UPLOAD_FOLDER']):
+        files_in_dir = os.listdir(app.config['UPLOAD_FOLDER'])
+        req_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_req_name.lower())
+        
+        if len(req_slug) > 3:
+            for existing_file in files_in_dir:
+                file_slug = re.sub(r'[^a-zA-Z0-9]', '', existing_file.lower())
+                if req_slug in file_slug or file_slug in req_slug:
+                    return send_from_directory(app.config['UPLOAD_FOLDER'], existing_file, as_attachment=existing_file.lower().endswith('.pdf'))
+
+    return f'''
+    <div style="text-align:center; font-family:Arial; margin-top:50px;">
+        <h3 style="color:#c0392b;">⚠️ फाइल सर्वर पर नहीं मिली</h3>
+        <p>मांगी गई फाइल <b>"{clean_req_name}"</b> अपलोड फोल्डर में उपलब्ध नहीं है।</p>
+        <a href="/admin-panel" style="padding:8px 15px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">🔙 एडमिन पैनल पर लौटें</a>
+    </div>
+    ''', 404
 
 @app.route('/kiosk-image/<path:filename>')
 def kiosk_image(filename):
@@ -197,15 +218,7 @@ HTML_ADMIN = """
                             <td>{{ requests_list[i][1] }}</td>
                             <td>{{ requests_list[i][3] }}</td>
                             <td><b>₹{{ requests_list[i][4] }}</b><br><small>UTR: {{ requests_list[i][7] if requests_list[i]|length > 7 else 'N/A' }}</small></td>
-                            <td>
-                                {% if requests_list[i][5] and requests_list[i][5] != 'कोई फाइल नहीं' and 'ई-मित्र' not in requests_list[i][5] %}
-                                    {% for fname in requests_list[i][5].split(',') %}
-                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline; margin-bottom:3px;">📁 {{ fname.strip() }}</a>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ requests_list[i][5] }}
-                                {% endif %}
-                            </td>
+                            <td>{{ requests_list[i][5] | render_file_links | safe }}</td>
                             <td>{{ requests_list[i][6] }}</td>
                             <td>
                                 <a href="/admin/move/New/Accepted/{{ i }}" class="btn btn-warning">👉 मंजूर करें</a>
@@ -239,15 +252,7 @@ HTML_ADMIN = """
                             <td>{{ accepted_list[i][1] }}</td>
                             <td>{{ accepted_list[i][3] }}</td>
                             <td><b>₹{{ accepted_list[i][4] }}</b></td>
-                            <td>
-                                {% if accepted_list[i][5] and accepted_list[i][5] != 'कोई फाइल नहीं' and 'ई-मित्र' not in accepted_list[i][5] %}
-                                    {% for fname in accepted_list[i][5].split(',') %}
-                                        <a href="/uploads/{{ fname.strip() }}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline; margin-bottom:3px;">📁 {{ fname.strip() }}</a>
-                                    {% endfor %}
-                                {% else %}
-                                    {{ accepted_list[i][5] }}
-                                {% endif %}
-                            </td>
+                            <td>{{ accepted_list[i][5] | render_file_links | safe }}</td>
                             <td>{{ accepted_list[i][6] }}</td>
                             <td>
                                 <a href="/admin/move/Accepted/Completed/{{ i }}" class="btn">✅ पूर्ण करें</a>
@@ -266,11 +271,32 @@ HTML_ADMIN = """
         </div>
     </div>
     <script>
-        setTimeout(function(){ location.reload(); }, 4000);
+        setTimeout(function(){ location.reload(); }, 5000);
     </script>
 </body>
 </html>
 """
+
+@app.template_filter('render_file_links')
+def render_file_links(file_text):
+    if not file_text or file_text == 'कोई फाइल नहीं' or 'ई-मित्र' in file_text:
+        return file_text
+    
+    extra_prefix = ""
+    target_files = file_text
+    if " | फाइलें: " in file_text:
+        parts = file_text.split(" | फाइलें: ")
+        extra_prefix = f"<div style='margin-bottom:4px;'><b>{parts[0]}</b></div>"
+        target_files = parts[1]
+    
+    items = [x.strip() for x in target_files.split(',') if x.strip()]
+    
+    html_out = extra_prefix
+    for fname in items:
+        encoded_url = urllib.parse.quote(fname)
+        html_out += f'<a href="/uploads/{encoded_url}" target="_blank" style="display:block; color:#007BFF; text-decoration:underline; margin-bottom:3px;">📁 {fname}</a>'
+    
+    return html_out
 
 @app.route('/')
 def home():
@@ -286,7 +312,7 @@ def service_page(service_name):
         <body style="font-family:Arial; background:#f4f4f4; padding:20px; text-align:center;">
             <div style="max-width:400px; margin:auto; background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); text-align:left;">
                 <h2 style="color:#2c3e50; text-align:center;">📄 SELF PRINT</h2>
-                <p style="font-size:13px; color:#555;">इसमें एक Browser होगा जिसमें आवेदक JPG, WhatsApp, JPEG, PDF जैसे 10 MB तक की रफ से अधिक फाइल upload कर सकता है तथा अपनी Request submit कर सकता है (बिना पेमेंट किए)।</p>
+                <p style="font-size:13px; color:#555;">इसमें आवेदक JPG, JPEG, PDF जैसी फाइलें upload कर सकता है तथा अपनी Request submit कर सकता है (बिना पेमेंट किए)।</p>
                 <form action="/submit-service" method="POST" enctype="multipart/form-data">
                     <input type="hidden" name="service_type" value="Self Print">
                     <input type="hidden" name="amount" value="0">
@@ -317,28 +343,23 @@ def service_page(service_name):
                 .card { max-width: 440px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: left; }
                 .info-box { background: #eef9ff; border: 1px solid #bce8f1; padding: 12px; border-radius: 5px; font-size: 13px; margin-bottom: 15px; color: #31708f; line-height: 1.5; }
                 .btn-download { display: block; background: #2980b9; color: white; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; border-radius: 5px; margin-bottom: 15px; }
-                .btn-download:hover { background: #2471a3; }
             </style>
         </head>
         <body>
             <div class="card">
                 <h2 style="color: #2c3e50; text-align: center; margin-top:0;">📜 मूल निवास प्रमाण पत्र</h2>
-                
                 <div class="info-box">
                     <b>📌 नियम व जरूरी दस्तावेज़:</b>
                     <ul style="padding-left:15px; margin:5px 0;">
                         <li>आधार कार्ड (आवेदक व पिता का)</li>
                         <li>जन आधार कार्ड</li>
                         <li>राशन कार्ड या बिजली बिल (निवास प्रमाण)</li>
-                        <li>पिछले स्कूल की टीसी / अध्ययन प्रमाण पत्र</li>
                         <li>स्व-घोषणा पत्र (Form)</li>
                     </ul>
-                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
+                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर संपर्क करें।</p>
                 </div>
-
                 <a href="/uploads/Bonafide-1.pdf" class="btn-download" target="_blank">📥 मूल निवास फॉर्म डाउनलोड करें (PDF)</a>
-
-                <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज पर जाएं</a>
+                <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज</a>
             </div>
         </body>
         </html>
@@ -356,28 +377,22 @@ def service_page(service_name):
                 .card { max-width: 440px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: left; }
                 .info-box { background: #eef9ff; border: 1px solid #bce8f1; padding: 12px; border-radius: 5px; font-size: 13px; margin-bottom: 15px; color: #31708f; line-height: 1.5; }
                 .btn-download { display: block; background: #2980b9; color: white; text-align: center; padding: 10px; text-decoration: none; font-weight: bold; border-radius: 5px; margin-bottom: 15px; }
-                .btn-download:hover { background: #2471a3; }
             </style>
         </head>
         <body>
             <div class="card">
                 <h2 style="color: #2c3e50; text-align: center; margin-top:0;">📑 जाति प्रमाण पत्र</h2>
-                
                 <div class="info-box">
                     <b>📌 नियम व जरूरी दस्तावेज़:</b>
                     <ul style="padding-left:15px; margin:5px 0;">
-                        <li>आधार कार्ड</li>
-                        <li>जन आधार कार्ड</li>
-                        <li>पिता या परिवार के किसी सदस्य का पुराना जाति प्रमाण पत्र</li>
-                        <li>मूल निवास प्रमाण पत्र</li>
-                        <li>राजपत्रित अधिकारी (Gazetted Officer) द्वारा सत्यापित आवेदन पत्र / शपथ पत्र</li>
+                        <li>आधार कार्ड व जन आधार कार्ड</li>
+                        <li>पुराना जाति प्रमाण पत्र / मूल निवास</li>
+                        <li>सत्यापित आवेदन पत्र / शपथ पत्र</li>
                     </ul>
-                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर ऑनलाइन आवेदन हेतु संपर्क करें।</p>
+                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर संपर्क करें।</p>
                 </div>
-
                 <a href="/uploads/OBC-CASTE.pdf" class="btn-download" target="_blank">📥 जाति प्रमाण पत्र फॉर्म डाउनलोड करें (PDF)</a>
-
-                <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज पर जाएं</a>
+                <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज</a>
             </div>
         </body>
         </html>
@@ -406,23 +421,22 @@ def service_page(service_name):
         note_html = """
         <div style="background: #eef9ff; border: 1px solid #bce8f1; padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; color: #31708f;">
             <b>📌 पैन कार्ड आवेदन के लिए निर्देश:</b><br>
-            आवेदक का <b>आधार कार्ड</b>, <b>10वीं मार्कशीट जरूरी है</b> (जिसमें जन्मतिथि आधार अनुरूप है)।<br>
-            * इसके अलावा अन्य विकल्प (जैसे नाम सुधार आदि) करते हुए रिक्वेस्ट सबमिट करनी है।
+            आवेदक का <b>आधार कार्ड</b>, <b>10वीं मार्कशीट जरूरी है</b>।
         </div>
         """
         extra_field_html = """
         <label><b>आधार नंबर / अन्य जानकारी:</b></label>
-        <input type="text" name="extra_info" placeholder="आधार नंबर या अन्य विवरण दर्ज करें" required>
+        <input type="text" name="extra_info" placeholder="विवरण दर्ज करें" required>
         """
     elif service_name == 'voter':
         note_html = """
         <div style="background: #eef9ff; border: 1px solid #bce8f1; padding: 10px; border-radius: 5px; font-size: 13px; margin-bottom: 12px; color: #31708f;">
-            <b>📌 वोटर कार्ड हेतु निर्देश:</b> नया वोटर आईडी, करेक्शन या नए नाम जोड़ने हेतु आवश्यक दस्तावेज अपलोड करें।
+            <b>📌 वोटर कार्ड हेतु निर्देश:</b> आवश्यक दस्तावेज अपलोड करें।
         </div>
         """
         extra_field_html = """
-        <label><b>Epic नंबर / अन्य विवरण:</b></label>
-        <input type="text" name="extra_info" placeholder="पुराना वोटर नंबर या विवरण (यदि हो)">
+        <label><b>Epic नंबर / विवरण:</b></label>
+        <input type="text" name="extra_info" placeholder="पुराना वोटर नंबर या विवरण">
         """
     else:
         extra_field_html = """
@@ -448,7 +462,7 @@ def service_page(service_name):
         <div class="card">
             <h2 style="color: #2c3e50; text-align: center; margin-top:0;">{s_title}</h2>
             {note_html}
-            <div class="fee-box">देय फीस (Fee): ₹{s_fee} (साथ में ₹{s_fee} पेम)</div>
+            <div class="fee-box">देय फीस (Fee): ₹{s_fee}</div>
             <form action="/pay-and-submit" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="{s_title}">
                 <input type="hidden" name="amount" value="{s_fee}">
@@ -475,7 +489,7 @@ def service_page(service_name):
                     <p style="font-size:12px; color:#666; margin:5px 0;">UPI ID: <b>{OWNER_UPI_ID}</b></p>
                 </div>
                 
-                <label><b>UPI ट्रांजैक्शन / UTR नंबर दर्ज करें (भुगतान के बाद):</b></label>
+                <label><b>UPI ट्रांजैक्शन / UTR नंबर दर्ज करें:</b></label>
                 <input type="text" name="utr_number" placeholder="जैसे: 4321xxxxxxxx" required style="background:#fffde7; font-weight:bold;">
                 
                 <button type="submit">🚀 भुगतान सत्यापित करें व फॉर्म जमा करें</button>
@@ -502,10 +516,12 @@ def submit_service():
         files = request.files.getlist('files')
         for file in files:
             if file and file.filename != '':
-                # यहाँ फाइल का नाम सही करने वाला फिक्स 100% जुड़ चुका है
-                safe_filename = file.filename.replace(' ', '_').replace(',', '_')
-                file.save(os.path.join(app.config['UPLOAD_FOLDER'], safe_filename))
-                uploaded_files.append(safe_filename)
+                # फाइल के नाम से स्पेस, कौमा और स्पेशल कैरेक्टर हटाकर सुरक्षित बनाएं
+                clean_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename)
+                clean_filename = re.sub(r'_+', '_', clean_filename)
+                
+                file.save(os.path.join(app.config['UPLOAD_FOLDER'], clean_filename))
+                uploaded_files.append(clean_filename)
                 
         filenames_str = ", ".join(uploaded_files) if uploaded_files else 'कोई फाइल नहीं'
         
@@ -528,9 +544,9 @@ def submit_service():
 
         return '''
             <div style="text-align:center; font-family:Arial; margin-top:50px; padding:25px; background:white; max-width:400px; margin:50px auto; border-radius:10px; box-shadow:0 0 15px rgba(0,0,0,0.2);">
-                <h2 style="color:#28a745;">✅ आवेदन सफलतापर्वूक जमा हो गया!</h2>
-                <p style="font-size:15px; color:#333;">आपका डेटा और पेमेंट UTR नंबर हमारे पास सुरक्षित पहुंच गया है। सबमिट की गई फाइल Admin पैनल में सेव हो गई है। जल्द ही आपका काम कर दिया जाएगा।</p>
-                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px; font-weight:bold;">🏠 होम पेज पर वापस जाएं</a>
+                <h2 style="color:#28a745;">✅ आवेदन सफलतापूर्वक जमा हो गया!</h2>
+                <p style="font-size:15px; color:#333;">आपका डेटा और फाइलें Admin पैनल में सुरक्षित पहुंच गई हैं।</p>
+                <br><a href="/" style="padding:10px 20px; background:#007BFF; color:white; text-decoration:none; border-radius:5px; font-weight:bold;">🏠 होम पेज पर जाएं</a>
             </div>
         '''
     except Exception as e:
