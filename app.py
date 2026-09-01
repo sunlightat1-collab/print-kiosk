@@ -19,8 +19,8 @@ STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 SERVICES_FILE = 'services.json'
 
-# ⚠️ गूगल एप्स स्क्रिप्ट URL
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHmjYi-XPpPe5fw96Z4IjdBsGxYKmbPuhdO-Oa0u01mkjmUM9NUcw/exec"
+# ⚠️ अद्यतन गूगल एप्स स्क्रिप्ट URL
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxecx32sGvKolAojFyABb35triZ24fnnK8DySG4tASG9KVVH1TCtUF0Z6X2-s49wxtd-g/exec"
 
 # 🟢 आपकी UPI आईडी
 OWNER_UPI_ID = "Q508475385@ybl" 
@@ -41,37 +41,35 @@ DEFAULT_SERVICES = [
     {"id": "ayushman", "title": "AYUSHMAN CARD (₹100)", "service_name": "Ayushman Card", "fee": 100, "emoji": "🏥", "note": "", "extra_label": "आयुष्मान कार्ड विवरण", "pdf_file": ""}
 ]
 
-def save_services(services):
-    with open(SERVICES_FILE, 'w', encoding='utf-8') as f:
-        json.dump(services, f, ensure_ascii=False, indent=4)
-
 def get_services():
     if not os.path.exists(SERVICES_FILE):
-        save_services(DEFAULT_SERVICES)
+        with open(SERVICES_FILE, 'w', encoding='utf-8') as f:
+            json.dump(DEFAULT_SERVICES, f, ensure_ascii=False, indent=4)
         return DEFAULT_SERVICES
     try:
         with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
+            # यदि पुरानी फाइल में कम कार्ड्स हों तो मिसिंग कार्ड्स अपने आप जोड़ें
             existing_ids = [c['id'] for c in data]
-            updated = False
             for default_card in DEFAULT_SERVICES:
                 if default_card['id'] not in existing_ids:
                     data.append(default_card)
-                    updated = True
-            if updated:
-                save_services(data)
             return data
-    except Exception:
+    except:
         return DEFAULT_SERVICES
+
+def save_services(services):
+    with open(SERVICES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(services, f, ensure_ascii=False, indent=4)
 
 def get_shop_status():
     if not os.path.exists(STATUS_FILE):
         return True
-    with open(STATUS_FILE, 'r', encoding='utf-8') as f:
+    with open(STATUS_FILE, 'r') as f:
         return f.read().strip() == 'ON'
 
 def set_shop_status(status):
-    with open(STATUS_FILE, 'w', encoding='utf-8') as f:
+    with open(STATUS_FILE, 'w') as f:
         f.write('ON' if status else 'OFF')
 
 def get_shop_notice():
@@ -318,12 +316,12 @@ HTML_ADMIN = """
                     {% if requests_list %}
                         {% for i in range(requests_list|length) %}
                         <tr>
-                            <td>{{ requests_list[i][0] if requests_list[i]|length > 0 else '' }}</td>
-                            <td>{{ requests_list[i][1] if requests_list[i]|length > 1 else '' }}</td>
-                            <td>{{ requests_list[i][3] if requests_list[i]|length > 3 else '' }}</td>
-                            <td><b>₹{{ requests_list[i][4] if requests_list[i]|length > 4 else '0' }}</b><br><small>UTR: {{ requests_list[i][7] if requests_list[i]|length > 7 else 'N/A' }}</small></td>
-                            <td>{{ (requests_list[i][5] if requests_list[i]|length > 5 else '') | render_file_links | safe }}</td>
-                            <td>{{ requests_list[i][6] if requests_list[i]|length > 6 else '' }}</td>
+                            <td>{{ requests_list[i][0] }}</td>
+                            <td>{{ requests_list[i][1] }}</td>
+                            <td>{{ requests_list[i][3] }}</td>
+                            <td><b>₹{{ requests_list[i][4] }}</b><br><small>UTR: {{ requests_list[i][7] if requests_list[i]|length > 7 else 'N/A' }}</small></td>
+                            <td>{{ requests_list[i][5] | render_file_links | safe }}</td>
+                            <td>{{ requests_list[i][6] }}</td>
                             <td>
                                 <a href="/admin/move/New/Accepted/{{ i }}" class="btn btn-warning">👉 मंजूर करें</a>
                             </td>
@@ -352,12 +350,12 @@ HTML_ADMIN = """
                     {% if accepted_list %}
                         {% for i in range(accepted_list|length) %}
                         <tr>
-                            <td>{{ accepted_list[i][0] if accepted_list[i]|length > 0 else '' }}</td>
-                            <td>{{ accepted_list[i][1] if accepted_list[i]|length > 1 else '' }}</td>
-                            <td>{{ accepted_list[i][3] if accepted_list[i]|length > 3 else '' }}</td>
-                            <td><b>₹{{ accepted_list[i][4] if accepted_list[i]|length > 4 else '0' }}</b></td>
-                            <td>{{ (accepted_list[i][5] if accepted_list[i]|length > 5 else '') | render_file_links | safe }}</td>
-                            <td>{{ accepted_list[i][6] if accepted_list[i]|length > 6 else '' }}</td>
+                            <td>{{ accepted_list[i][0] }}</td>
+                            <td>{{ accepted_list[i][1] }}</td>
+                            <td>{{ accepted_list[i][3] }}</td>
+                            <td><b>₹{{ accepted_list[i][4] }}</b></td>
+                            <td>{{ accepted_list[i][5] | render_file_links | safe }}</td>
+                            <td>{{ accepted_list[i][6] }}</td>
                             <td>
                                 <a href="/admin/move/Accepted/Completed/{{ i }}" class="btn">✅ पूर्ण करें</a>
                             </td>
@@ -551,6 +549,7 @@ def service_page(service_name):
         </html>
         ''')
 
+    # डायनामिक सर्विसेज खोजें
     services = get_services()
     target_card = None
     for card in services:
