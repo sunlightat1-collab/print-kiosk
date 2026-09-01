@@ -42,6 +42,7 @@ DEFAULT_SERVICES = [
 ]
 
 def get_services():
+    # अगर फाइल नहीं है तो डिफ़ॉल्ट सेव करें और रिटर्न करें
     if not os.path.exists(SERVICES_FILE):
         with open(SERVICES_FILE, 'w', encoding='utf-8') as f:
             json.dump(DEFAULT_SERVICES, f, ensure_ascii=False, indent=4)
@@ -49,10 +50,6 @@ def get_services():
     try:
         with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            existing_ids = [c['id'] for c in data]
-            for default_card in DEFAULT_SERVICES:
-                if default_card['id'] not in existing_ids:
-                    data.append(default_card)
             return data
     except:
         return DEFAULT_SERVICES
@@ -685,7 +682,6 @@ def submit_service():
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], clean_filename))
                 uploaded_files.append(clean_filename)
                 
-        # 🌟 यहाँ सुधार किया गया है ताकि 'files' की जगह असली फाइल का नाम जाए
         filenames_str = ", ".join(uploaded_files) if uploaded_files else 'कोई फाइल नहीं'
         
         if extra_info:
