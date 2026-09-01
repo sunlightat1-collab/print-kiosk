@@ -49,33 +49,36 @@ def set_shop_notice(notice):
 def uploaded_file(filename):
     clean_req_name = urllib.parse.unquote(filename).strip()
     
-    # 1. सीधा सर्च
-    file_path = os.path.join(app.config['UPLOAD_FOLDER'], clean_req_name)
-    if os.path.exists(file_path):
+    # 1. uploads फोल्डर में सर्च करें
+    file_path_uploads = os.path.join(app.config['UPLOAD_FOLDER'], clean_req_name)
+    if os.path.exists(file_path_uploads):
         return send_from_directory(app.config['UPLOAD_FOLDER'], clean_req_name, as_attachment=clean_req_name.lower().endswith('.pdf'))
     
-    # 2. Case-Insensitive व केस-फ्री सर्च
-    if os.path.exists(app.config['UPLOAD_FOLDER']):
-        files_in_dir = os.listdir(app.config['UPLOAD_FOLDER'])
-        
-        # छोटे/बड़े अक्षरों को नजरअंदाज करके मैच करना
-        for f in files_in_dir:
-            if f.lower() == clean_req_name.lower():
-                return send_from_directory(app.config['UPLOAD_FOLDER'], f, as_attachment=f.lower().endswith('.pdf'))
-        
-        # स्पेशल कैरेक्टर हटाकर स्मार्ट मैचिंग
-        req_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_req_name.lower())
-        if len(req_slug) > 3:
-            for f in files_in_dir:
-                file_slug = re.sub(r'[^a-zA-Z0-9]', '', f.lower())
-                if req_slug in file_slug or file_slug in req_slug:
-                    return send_from_directory(app.config['UPLOAD_FOLDER'], f, as_attachment=f.lower().endswith('.pdf'))
+    # 2. रूट (Main) फोल्डर में सर्च करें (चूँकि GitHub पर फाइलें रूट में हैं)
+    if os.path.exists(clean_req_name):
+        return send_from_directory('.', clean_req_name, as_attachment=clean_req_name.lower().endswith('.pdf'))
+
+    # 3. दोनों फोल्डर (uploads और .) में केस-इन्सेंसिटिव सर्च
+    for folder in [app.config['UPLOAD_FOLDER'], '.']:
+        if os.path.exists(folder):
+            for f in os.listdir(folder):
+                if f.lower() == clean_req_name.lower():
+                    return send_from_directory(folder, f, as_attachment=f.lower().endswith('.pdf'))
+
+    # 4. स्मार्ट नाम मैचिंग (Fuzzy Search)
+    req_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_req_name.lower())
+    if len(req_slug) > 3:
+        for folder in [app.config['UPLOAD_FOLDER'], '.']:
+            if os.path.exists(folder):
+                for f in os.listdir(folder):
+                    file_slug = re.sub(r'[^a-zA-Z0-9]', '', f.lower())
+                    if req_slug in file_slug or file_slug in req_slug:
+                        return send_from_directory(folder, f, as_attachment=f.lower().endswith('.pdf'))
 
     return f'''
     <div style="text-align:center; font-family:Arial; margin-top:50px;">
         <h3 style="color:#c0392b;">⚠️ फाइल सर्वर पर नहीं मिली</h3>
-        <p>मांगी गई फाइल <b>"{clean_req_name}"</b> अपलोड फोल्डर में उपलब्ध नहीं है।</p>
-        <p style="color:#666; font-size:13px;">कृपया सुनिश्चित करें कि आपने GitHub के <b>uploads/</b> फोल्डर में <b>{clean_req_name}</b> फाइल अपलोड की है।</p>
+        <p>मांगी गई फाइल <b>"{clean_req_name}"</b> उपलब्ध नहीं है।</p>
         <a href="/" style="padding:8px 15px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">🔙 होम पेज पर जाएं</a>
     </div>
     ''', 404
