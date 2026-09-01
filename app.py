@@ -19,8 +19,8 @@ STATUS_FILE = 'shop_status.txt'
 NOTICE_FILE = 'shop_notice.txt'
 SERVICES_FILE = 'services.json'
 
-# ⚠️ अद्यतन गूगल एप्स स्क्रिप्ट URL
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxecx32sGvKolAojFyABb35triZ24fnnK8DySG4tASG9KVVH1TCtUF0Z6X2-s49wxtd-g/exec"
+# ⚠️ आपकी नई अपडेटेड गूगल एप्स स्क्रिप्ट URL
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxP6dn1NSnuo4oyvoF4pNm-NKs9ly_TkfoehlxxCmgKPLO-LB21b2L74pa6Xhelh7gEbw/exec"
 
 # 🟢 आपकी UPI आईडी
 OWNER_UPI_ID = "Q508475385@ybl" 
