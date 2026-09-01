@@ -54,27 +54,29 @@ def uploaded_file(filename):
     if os.path.exists(file_path):
         return send_from_directory(app.config['UPLOAD_FOLDER'], clean_req_name, as_attachment=clean_req_name.lower().endswith('.pdf'))
     
-    # 2. स्पेस को अंडरस्कोर से बदलकर सर्च
-    alt_name1 = clean_req_name.replace(' ', '_')
-    if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], alt_name1)):
-        return send_from_directory(app.config['UPLOAD_FOLDER'], alt_name1, as_attachment=alt_name1.lower().endswith('.pdf'))
-
-    # 3. यदि नाम कौमा/स्पेस से टूटा हुआ है तो UPLOAD फोल्डर में सबसे नजदीकी फाइल ढूंढना
+    # 2. Case-Insensitive व केस-फ्री सर्च
     if os.path.exists(app.config['UPLOAD_FOLDER']):
         files_in_dir = os.listdir(app.config['UPLOAD_FOLDER'])
-        req_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_req_name.lower())
         
+        # छोटे/बड़े अक्षरों को नजरअंदाज करके मैच करना
+        for f in files_in_dir:
+            if f.lower() == clean_req_name.lower():
+                return send_from_directory(app.config['UPLOAD_FOLDER'], f, as_attachment=f.lower().endswith('.pdf'))
+        
+        # स्पेशल कैरेक्टर हटाकर स्मार्ट मैचिंग
+        req_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_req_name.lower())
         if len(req_slug) > 3:
-            for existing_file in files_in_dir:
-                file_slug = re.sub(r'[^a-zA-Z0-9]', '', existing_file.lower())
+            for f in files_in_dir:
+                file_slug = re.sub(r'[^a-zA-Z0-9]', '', f.lower())
                 if req_slug in file_slug or file_slug in req_slug:
-                    return send_from_directory(app.config['UPLOAD_FOLDER'], existing_file, as_attachment=existing_file.lower().endswith('.pdf'))
+                    return send_from_directory(app.config['UPLOAD_FOLDER'], f, as_attachment=f.lower().endswith('.pdf'))
 
     return f'''
     <div style="text-align:center; font-family:Arial; margin-top:50px;">
         <h3 style="color:#c0392b;">⚠️ फाइल सर्वर पर नहीं मिली</h3>
         <p>मांगी गई फाइल <b>"{clean_req_name}"</b> अपलोड फोल्डर में उपलब्ध नहीं है।</p>
-        <a href="/admin-panel" style="padding:8px 15px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">🔙 एडमिन पैनल पर लौटें</a>
+        <p style="color:#666; font-size:13px;">कृपया सुनिश्चित करें कि आपने GitHub के <b>uploads/</b> फोल्डर में <b>{clean_req_name}</b> फाइल अपलोड की है।</p>
+        <a href="/" style="padding:8px 15px; background:#007BFF; color:white; text-decoration:none; border-radius:5px;">🔙 होम पेज पर जाएं</a>
     </div>
     ''', 404
 
@@ -516,7 +518,6 @@ def submit_service():
         files = request.files.getlist('files')
         for file in files:
             if file and file.filename != '':
-                # फाइल के नाम से स्पेस, कौमा और स्पेशल कैरेक्टर हटाकर सुरक्षित बनाएं
                 clean_filename = re.sub(r'[^a-zA-Z0-9_.-]', '_', file.filename)
                 clean_filename = re.sub(r'_+', '_', clean_filename)
                 
