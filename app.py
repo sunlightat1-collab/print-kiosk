@@ -26,8 +26,11 @@ GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyCc_unuXdvpBqCieHm
 OWNER_UPI_ID = "Q508475385@ybl" 
 OWNER_NAME = "BHUARKARKA SERVICES"
 
-# डिफ़ॉल्ट सर्विस कार्ड्स की लिस्ट
+# डिफ़ॉल्ट कुल 11 सर्विस कार्ड्स की लिस्ट
 DEFAULT_SERVICES = [
+    {"id": "print", "title": "SELF PRINT", "service_name": "Self Print", "fee": 0, "emoji": "📄", "note": "इसमें आवेदक JPG, JPEG, PDF जैसी फाइलें upload कर सकता है", "extra_label": "प्रिंट विवरण", "pdf_file": ""},
+    {"id": "bonafide", "title": "मूल निवास प्रमाण पत्र", "service_name": "Bonafide Certificate", "fee": 0, "emoji": "📜", "note": "सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर संपर्क करें।", "extra_label": "विवरण", "pdf_file": "Bonafide-1.pdf"},
+    {"id": "caste", "title": "जाति प्रमाण पत्र", "service_name": "Caste Certificate", "fee": 0, "emoji": "📑", "note": "सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर संपर्क करें।", "extra_label": "विवरण", "pdf_file": "OBC-CASTE.pdf"},
     {"id": "pan", "title": "PAN CARD (₹200)", "service_name": "PAN Card Application", "fee": 200, "emoji": "💳", "note": "आवेदक का आधार कार्ड, 10वीं मार्कशीट जरूरी है।", "extra_label": "आधार नंबर / अन्य जानकारी", "pdf_file": ""},
     {"id": "pvc_aadhar", "title": "PVC AADHAR (₹100)", "service_name": "PVC Aadhar Card", "fee": 100, "emoji": "🪪", "note": "आवश्यक विवरण दर्ज करें।", "extra_label": "आधार नंबर", "pdf_file": ""},
     {"id": "voter", "title": "VOTER CARD (₹100)", "service_name": "Voter Card", "fee": 100, "emoji": "🗳️", "note": "वोटर कार्ड हेतु आवश्यक दस्तावेज अपलोड करें।", "extra_label": "Epic नंबर / विवरण", "pdf_file": ""},
@@ -45,7 +48,13 @@ def get_services():
         return DEFAULT_SERVICES
     try:
         with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            data = json.load(f)
+            # यदि पुरानी फाइल में कम कार्ड्स हों तो मिसिंग कार्ड्स अपने आप जोड़ें
+            existing_ids = [c['id'] for c in data]
+            for default_card in DEFAULT_SERVICES:
+                if default_card['id'] not in existing_ids:
+                    data.append(default_card)
+            return data
     except:
         return DEFAULT_SERVICES
 
@@ -130,7 +139,7 @@ HTML_HOME = """
             text-align: center; 
             min-height: 100vh;
         }
-        .container { max-width: 600px; margin: auto; }
+        .container { max-width: 800px; margin: auto; }
         h1 { font-family: 'Britannic Bold', Arial, sans-serif; color: white; text-shadow: 2px 2px 6px rgba(0,0,0,0.8); margin-bottom: 10px; }
         .notice-banner { background: rgba(255, 193, 7, 0.95); color: #333; padding: 10px 15px; border-radius: 8px; font-weight: bold; font-size: 14px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); border: 1px dashed #d39e00; }
         .shop-status { display: inline-flex; align-items: center; background: rgba(0, 0, 0, 0.75); padding: 8px 16px; border-radius: 30px; color: white; font-weight: bold; font-size: 14px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.2); }
@@ -156,10 +165,6 @@ HTML_HOME = """
         </div>
         <p style="color: #fff; margin-bottom: 20px; font-weight: bold;">कृपया अपनी सेवा चुनें:</p>
         <div class="app-grid">
-            <a href="/service/print" class="app-icon-card"><div class="emoji">📄</div><div class="title-text">SELF PRINT</div></a>
-            <a href="/service/bonafide" class="app-icon-card"><div class="emoji">📜</div><div class="title-text">मूल निवास प्रमाण पत्र</div></a>
-            <a href="/service/caste" class="app-icon-card"><div class="emoji">📑</div><div class="title-text">जाति प्रमाण पत्र</div></a>
-            
             {% for card in dynamic_services %}
             <a href="/service/{{ card.id }}" class="app-icon-card">
                 <div class="emoji">{{ card.emoji }}</div>
@@ -180,7 +185,7 @@ HTML_ADMIN = """
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
         body { font-family: Arial, sans-serif; background: #2c3e50; color: #fff; padding: 15px; margin: 0; }
-        .container { max-width: 900px; margin: auto; }
+        .container { max-width: 1050px; margin: auto; }
         h2 { text-align: center; color: #f1c40f; }
         .card { background: #34495e; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .btn { display: inline-block; padding: 6px 12px; background: #27ae60; color: white; text-decoration: none; border-radius: 4px; font-weight: bold; border: none; cursor: pointer; margin: 3px 2px; font-size: 12px; }
@@ -219,7 +224,6 @@ HTML_ADMIN = """
             </form>
         </div>
 
-        <!-- 🆕 सर्विस कार्ड जोड़ने व अपलोड करने का नया सेक्शन -->
         <div class="card">
             <h3>➕ नया सर्विस कार्ड जोड़ें (Add New Card):</h3>
             <form method="POST" action="/admin/add-service" enctype="multipart/form-data">
@@ -253,7 +257,7 @@ HTML_ADMIN = """
                 <button type="submit" class="btn" style="padding: 10px 18px; font-size: 14px; margin-top: 5px;">✨ नया कार्ड जोड़ें</button>
             </form>
 
-            <h4 style="margin-top:20px; color:#f1c40f;">📋 मौजूदा सर्विस कार्ड्स:</h4>
+            <h4 style="margin-top:20px; color:#f1c40f;">📋 मौजूदा सर्विस कार्ड्स (कुल: {{ dynamic_services|length }}):</h4>
             <div style="overflow-x: auto;">
                 <table>
                     <tr>
@@ -724,7 +728,6 @@ def admin_panel():
 
     return render_template_string(HTML_ADMIN, is_online=get_shop_status(), notice=get_shop_notice(), requests_list=requests_list, accepted_list=accepted_list, dynamic_services=get_services())
 
-# 🆕 नया सर्विस कार्ड जोड़ने का रूट (फाइल अपलोड के साथ)
 @app.route('/admin/add-service', methods=['POST'])
 def add_service():
     if session.get('logged_in'):
@@ -759,7 +762,6 @@ def add_service():
 
     return redirect(url_for('admin_panel'))
 
-# ✏️ कार्ड एडिट करने का रूट
 @app.route('/admin/edit-service/<card_id>', methods=['GET', 'POST'])
 def edit_service(card_id):
     if not session.get('logged_in'):
@@ -794,7 +796,6 @@ def edit_service(card_id):
 
     return render_template_string(HTML_EDIT_CARD, card=target_card)
 
-# 🗑️ कार्ड डिलीट करने का रूट
 @app.route('/admin/delete-service/<card_id>')
 def delete_service(card_id):
     if session.get('logged_in'):
