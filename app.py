@@ -26,11 +26,11 @@ GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxecx32sGvKolAojFyA
 OWNER_UPI_ID = "Q508475385@ybl" 
 OWNER_NAME = "BHUARKARKA SERVICES"
 
-# डिफ़ॉल्ट कुल 11 सर्विस कार्ड्स की लिस्ट
+# डिफ़ॉल्ट कुल सर्विस कार्ड्स की लिस्ट (जिसमें जाति प्रमाण पत्र फॉर्म भी शामिल है)
 DEFAULT_SERVICES = [
     {"id": "print", "title": "SELF PRINT", "service_name": "Self Print", "fee": 0, "emoji": "📄", "note": "इसमें आवेदक JPG, JPEG, PDF जैसी फाइलें upload कर सकता है", "extra_label": "प्रिंट विवरण", "pdf_file": ""},
     {"id": "bonafide", "title": "मूल निवास प्रमाण पत्र", "service_name": "Bonafide Certificate", "fee": 0, "emoji": "📜", "note": "सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर संपर्क करें।", "extra_label": "विवरण", "pdf_file": "Bonafide-1.pdf"},
-    {"id": "caste", "title": "जाति प्रमाण पत्र", "service_name": "Caste Certificate", "fee": 0, "emoji": "📑", "note": "सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर संपर्क करें।", "extra_label": "विवरण", "pdf_file": "OBC-CASTE.pdf"},
+    {"id": "caste", "title": "जाति प्रमाण पत्र", "service_name": "Caste Certificate", "fee": 0, "emoji": "📑", "note": "आवेदक का आधार, फोटो, शपथ-पत्र एवं पिछले साक्ष्य अपलोड करें।", "extra_label": "जाति / उपजाति विवरण", "pdf_file": "SC_cast.pdf"},
     {"id": "pan", "title": "PAN CARD (₹200)", "service_name": "PAN Card Application", "fee": 200, "emoji": "💳", "note": "आवेदक का आधार कार्ड, 10वीं मार्कशीट जरूरी है।", "extra_label": "आधार नंबर / अन्य जानकारी", "pdf_file": ""},
     {"id": "pvc_aadhar", "title": "PVC AADHAR (₹100)", "service_name": "PVC Aadhar Card", "fee": 100, "emoji": "🪪", "note": "आवश्यक विवरण दर्ज करें।", "extra_label": "आधार नंबर", "pdf_file": ""},
     {"id": "voter", "title": "VOTER CARD (₹100)", "service_name": "Voter Card", "fee": 100, "emoji": "🗳️", "note": "वोटर कार्ड हेतु आवश्यक दस्तावेज अपलोड करें।", "extra_label": "Epic नंबर / विवरण", "pdf_file": ""},
@@ -97,15 +97,6 @@ def uploaded_file(filename):
             for f in os.listdir(folder):
                 if f.lower() == clean_req_name.lower():
                     return send_from_directory(folder, f, as_attachment=f.lower().endswith('.pdf'))
-
-    req_slug = re.sub(r'[^a-zA-Z0-9]', '', clean_req_name.lower())
-    if len(req_slug) > 3:
-        for folder in [app.config['UPLOAD_FOLDER'], '.']:
-            if os.path.exists(folder):
-                for f in os.listdir(folder):
-                    file_slug = re.sub(r'[^a-zA-Z0-9]', '', f.lower())
-                    if req_slug in file_slug or file_slug in req_slug:
-                        return send_from_directory(folder, f, as_attachment=f.lower().endswith('.pdf'))
 
     return f'''
     <div style="text-align:center; font-family:Arial; margin-top:50px;">
@@ -240,7 +231,7 @@ HTML_ADMIN = """
                         <input type="text" name="service_name" placeholder="जैसे: E-Shram Card Application" required>
                     </div>
                     <div>
-                        <label>फीस राशि (₹): <small style="color:#f1c40f;">(0 या खाली = मुफ़्त/Free, QR नहीं दिखेगा)</small></label>
+                        <label>फीस राशि (₹): <small style="color:#f1c40f;">(0 या खाली = मुफ़्त/Free)</small></label>
                         <input type="number" name="fee" value="0" placeholder="0 दर्ज करें यदि फ्री सेवा है">
                     </div>
                 </div>
@@ -248,7 +239,7 @@ HTML_ADMIN = """
                 <input type="text" name="note" placeholder="जैसे: आधार कार्ड और मोबाइल नंबर अनिवार्य है">
                 
                 <label>अतिरिक्त फील्ड लेबल (Input Field Name):</label>
-                <input type="text" name="extra_label" placeholder="जैसे: आधार नंबर / मोबाइल नंबर" required>
+                <input type="text" name="extra_label" placeholder="जैसे: आधार नंबर / विवरण" required>
 
                 <label>📁 ब्राउज़ करें व फॉर्म/PDF अपलोड करें (ऐच्छिक):</label>
                 <input type="file" name="pdf_file" accept=".pdf,.jpg,.jpeg,.png">
@@ -324,7 +315,13 @@ HTML_ADMIN = """
                             <td>{{ requests_list[i][0] }}</td>
                             <td>{{ requests_list[i][1] }}</td>
                             <td>{{ requests_list[i][3] }}</td>
-                            <td><b>₹{{ requests_list[i][4] }}</b><br><small>UTR: {{ requests_list[i][7] if requests_list[i]|length > 7 else 'N/A' }}</small></td>
+                            <td>
+                                {% if requests_list[i][4]|int > 0 %}
+                                    <b>₹{{ requests_list[i][4] }}</b><br><small>UTR: {{ requests_list[i][7] if requests_list[i]|length > 7 and requests_list[i][7] != 'FREE / NA' else 'N/A' }}</small>
+                                {% else %}
+                                    <span style="color:#2980b9; font-weight:bold;">मुफ़्त सेवा (Free)</span>
+                                {% endif %}
+                            </td>
                             <td>{{ requests_list[i][5] | render_file_links | safe }}</td>
                             <td>{{ requests_list[i][6] }}</td>
                             <td>
@@ -358,7 +355,13 @@ HTML_ADMIN = """
                             <td>{{ accepted_list[i][0] }}</td>
                             <td>{{ accepted_list[i][1] }}</td>
                             <td>{{ accepted_list[i][3] }}</td>
-                            <td><b>₹{{ accepted_list[i][4] }}</b></td>
+                            <td>
+                                {% if accepted_list[i][4]|int > 0 %}
+                                    <b>₹{{ accepted_list[i][4] }}</b>
+                                {% else %}
+                                    <span style="color:#2980b9; font-weight:bold;">मुफ़्त सेवा (Free)</span>
+                                {% endif %}
+                            </td>
                             <td>{{ accepted_list[i][5] | render_file_links | safe }}</td>
                             <td>{{ accepted_list[i][6] }}</td>
                             <td>
@@ -537,17 +540,18 @@ def service_page(service_name):
         </head>
         <body>
             <div class="card">
-                <h2 style="color: #2c3e50; text-align: center; margin-top:0;">📑 जाति प्रमाण पत्र</h2>
+                <h2 style="color: #2c3e50; text-align: center; margin-top:0;">📑 जाति प्रमाण पत्र (SC/ST)</h2>
                 <div class="info-box">
                     <b>📌 नियम व जरूरी दस्तावेज़:</b>
                     <ul style="padding-left:15px; margin:5px 0;">
-                        <li>आधार कार्ड व जन आधार कार्ड</li>
-                        <li>पुराना जाति प्रमाण पत्र / मूल निवास</li>
-                        <li>सत्यापित आवेदन पत्र / शपथ पत्र</li>
+                        <li>आधार कार्ड व जन आधार / भामाशाह कार्ड</li>
+                        <li>पिता की जाति का साक्ष्य (पुराना जाति प्रमाण पत्र / जमीन जमाबंदी)</li>
+                        <li>राशन कार्ड, मतदाता सूची या बिजली पानी का बिल</li>
+                        <li>शपथ-पत्र व दो उत्तरदायी व्यक्तियों के हस्ताक्षर</li>
                     </ul>
-                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सभी दस्तावेज़ लेकर नजदीकी ई-मित्र पर संपर्क करें।</p>
+                    <p style="margin:8px 0 0 0; color:#d9534f; font-weight:bold;">⚠️ सादा फॉर्म डाउनलोड करके प्रिंट निकाल सकते हैं या ऑनलाइन आवेदन भेज सकते हैं।</p>
                 </div>
-                <a href="/uploads/OBC-CASTE.pdf" class="btn-download" target="_blank">📥 जाति प्रमाण पत्र फॉर्म डाउनलोड करें (PDF)</a>
+                <a href="/uploads/SC_cast.pdf" class="btn-download" target="_blank">📥 जाति प्रमाण पत्र सादा फॉर्म डाउनलोड करें (PDF)</a>
                 <a href="/" style="display:block; text-align:center; margin-top:15px; color:#007BFF; text-decoration:none;">⬅️ होम पेज</a>
             </div>
         </body>
@@ -567,7 +571,6 @@ def service_page(service_name):
         
     s_title = target_card['service_name']
     
-    # 🌟 शुल्क की जाँच करें (0 या None होने पर Free माना जाएगा)
     try:
         s_fee = int(target_card.get('fee', 0))
     except (ValueError, TypeError):
@@ -590,10 +593,9 @@ def service_page(service_name):
     file_download_html = ""
     if pdf_file:
         file_download_html = f'''
-        <a href="/uploads/{pdf_file}" target="_blank" style="display:block; background:#2980b9; color:white; text-align:center; padding:10px; font-weight:bold; border-radius:5px; text-decoration:none; margin-bottom:15px;">📥 फॉर्म / संबंधित फाइल डाउनलोड करें (PDF/File)</a>
+        <a href="/uploads/{pdf_file}" target="_blank" style="display:block; background:#2980b9; color:white; text-align:center; padding:10px; font-weight:bold; border-radius:5px; text-decoration:none; margin-bottom:15px;">📥 खाली फॉर्म / संबंधित फाइल डाउनलोड करें (PDF)</a>
         '''
 
-    # 🌟 यदि पेड सेवा है तो QR व UTR सेक्शन दिखाएं, वरना छुपाएं
     if is_paid:
         fee_display_html = f'<div class="fee-box" style="background:#e8f5e9; color:#2e7d32; padding:10px; text-align:center; font-weight:bold; border-radius:5px; margin-bottom:10px;">देय फीस (Fee): ₹{s_fee}</div>'
         payment_section_html = f'''
@@ -862,7 +864,7 @@ def toggle_status():
 def update_notice():
     if session.get('logged_in'):
         set_shop_notice(request.form.get('notice', ''))
-    return redirect(url_for('admin_panel'))
+    return redirect(url_for('admin_pdf')) if False else redirect(url_for('admin_panel'))
 
 @app.route('/admin/download/<sheet_name>')
 def download_report(sheet_name):
@@ -875,6 +877,10 @@ def download_report(sheet_name):
         writer = csv.writer(output)
         writer.writerow(['Name', 'Mobile', 'Email', 'Service', 'Amount', 'Files', 'Status', 'UTR'])
         for row in data:
+            if len(row) > 4 and str(row[4]) == '0':
+                row[4] = 'FREE'
+            if len(row) > 7 and row[7] == 'FREE / NA':
+                row[7] = 'NA (Free Service)'
             writer.writerow(row)
         output.seek(0)
         return Response(output, mimetype="text/csv", headers={"Content-Disposition": f"attachment;filename={sheet_name}_Report.csv"})
