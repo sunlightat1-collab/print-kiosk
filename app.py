@@ -49,7 +49,6 @@ def get_services():
     try:
         with open(SERVICES_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            # यदि पुरानी फाइल में कम कार्ड्स हों तो मिसिंग कार्ड्स अपने आप जोड़ें
             existing_ids = [c['id'] for c in data]
             for default_card in DEFAULT_SERVICES:
                 if default_card['id'] not in existing_ids:
@@ -241,8 +240,8 @@ HTML_ADMIN = """
                         <input type="text" name="service_name" placeholder="जैसे: E-Shram Card Application" required>
                     </div>
                     <div>
-                        <label>फीस राशि (₹):</label>
-                        <input type="number" name="fee" value="100" required>
+                        <label>फीस राशि (₹): <small style="color:#f1c40f;">(0 या खाली = मुफ़्त/Free, QR नहीं दिखेगा)</small></label>
+                        <input type="number" name="fee" value="0" placeholder="0 दर्ज करें यदि फ्री सेवा है">
                     </div>
                 </div>
                 <label>निर्देश / नोट (ऐच्छिक):</label>
@@ -263,7 +262,7 @@ HTML_ADMIN = """
                     <tr>
                         <th>इमोजी</th>
                         <th>टाइटल</th>
-                        <th>फीस</th>
+                        <th>फीस प्रकार</th>
                         <th>इनपुट लेबल</th>
                         <th>संलग्न फाइल</th>
                         <th>एक्शन</th>
@@ -272,7 +271,13 @@ HTML_ADMIN = """
                     <tr>
                         <td>{{ card.emoji }}</td>
                         <td><b>{{ card.title }}</b></td>
-                        <td>₹{{ card.fee }}</td>
+                        <td>
+                            {% if card.fee and card.fee|int > 0 %}
+                                <span style="color:#27ae60; font-weight:bold;">₹{{ card.fee }}</span>
+                            {% else %}
+                                <span style="color:#2980b9; font-weight:bold;">🆓 मुफ़्त (FREE)</span>
+                            {% endif %}
+                        </td>
                         <td>{{ card.extra_label }}</td>
                         <td>
                             {% if card.pdf_file %}
@@ -403,8 +408,8 @@ HTML_EDIT_CARD = """
             <label>सर्विस नाम (गूगल शीट हेतु):</label>
             <input type="text" name="service_name" value="{{ card.service_name }}" required>
 
-            <label>फीस राशि (₹):</label>
-            <input type="number" name="fee" value="{{ card.fee }}" required>
+            <label>फीस राशि (₹): <small style="color:#f1c40f;">(0 या खाली = मुफ़्त/Free)</small></label>
+            <input type="number" name="fee" value="{{ card.fee if card.fee is not none else 0 }}" placeholder="0 दर्ज करें यदि फ्री सेवा है">
 
             <label>निर्देश / नोट (ऐच्छिक):</label>
             <input type="text" name="note" value="{{ card.note }}">
@@ -561,7 +566,15 @@ def service_page(service_name):
         return redirect(url_for('home'))
         
     s_title = target_card['service_name']
-    s_fee = target_card['fee']
+    
+    # 🌟 शुल्क की जाँच करें (0 या None होने पर Free माना जाएगा)
+    try:
+        s_fee = int(target_card.get('fee', 0))
+    except (ValueError, TypeError):
+        s_fee = 0
+
+    is_paid = s_fee > 0
+
     note_text = target_card.get('note', '')
     extra_label = target_card.get('extra_label', 'आवश्यक जानकारी')
     pdf_file = target_card.get('pdf_file', '')
@@ -580,6 +593,26 @@ def service_page(service_name):
         <a href="/uploads/{pdf_file}" target="_blank" style="display:block; background:#2980b9; color:white; text-align:center; padding:10px; font-weight:bold; border-radius:5px; text-decoration:none; margin-bottom:15px;">📥 फॉर्म / संबंधित फाइल डाउनलोड करें (PDF/File)</a>
         '''
 
+    # 🌟 यदि पेड सेवा है तो QR व UTR सेक्शन दिखाएं, वरना छुपाएं
+    if is_paid:
+        fee_display_html = f'<div class="fee-box" style="background:#e8f5e9; color:#2e7d32; padding:10px; text-align:center; font-weight:bold; border-radius:5px; margin-bottom:10px;">देय फीस (Fee): ₹{s_fee}</div>'
+        payment_section_html = f'''
+        <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
+        <div style="text-align:center;">
+            <p style="margin:5px 0; font-size:13px; font-weight:bold; color:#555;">नीचे दिए गए QR कोड को स्कैन करके ₹{s_fee} भुगतान करें:</p>
+            <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa={OWNER_UPI_ID}&pn={OWNER_NAME}&am={s_fee}&cu=INR" alt="UPI QR Code" style="border:1px solid #ddd; padding:5px; border-radius:5px; background:white;">
+            <p style="font-size:12px; color:#666; margin:5px 0;">UPI ID: <b>{OWNER_UPI_ID}</b></p>
+        </div>
+        
+        <label><b>UPI ट्रांजैक्शन / UTR नंबर दर्ज करें:</b></label>
+        <input type="text" name="utr_number" placeholder="जैसे: 4321xxxxxxxx" required style="background:#fffde7; font-weight:bold;">
+        '''
+        submit_btn_text = "🚀 भुगतान सत्यापित करें व फॉर्म जमा करें"
+    else:
+        fee_display_html = f'<div class="fee-box" style="background:#e3f2fd; color:#1565c0; padding:10px; text-align:center; font-weight:bold; border-radius:5px; margin-bottom:10px;">🎉 यह सेवा बिल्कुल मुफ़्त (FREE) है!</div>'
+        payment_section_html = '<input type="hidden" name="utr_number" value="FREE / NA">'
+        submit_btn_text = "🚀 फ़ॉर्म सबमिट करें"
+
     return render_template_string(f'''
     <!DOCTYPE html>
     <html>
@@ -590,8 +623,7 @@ def service_page(service_name):
             body {{ font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; text-align: center; }}
             .card {{ max-width: 440px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); text-align: left; }}
             input, select, button {{ width: 100%; padding: 10px; margin: 6px 0 12px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }}
-            button {{ background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; }}
-            .fee-box {{ background: #e8f5e9; color: #2e7d32; padding: 10px; text-align: center; font-weight: bold; border-radius: 5px; margin-bottom: 10px; }}
+            button {{ background: #28a745; color: white; font-weight: bold; border: none; cursor: pointer; font-size:15px; }}
         </style>
     </head>
     <body>
@@ -599,7 +631,7 @@ def service_page(service_name):
             <h2 style="color: #2c3e50; text-align: center; margin-top:0;">{s_title}</h2>
             {note_html}
             {file_download_html}
-            <div class="fee-box">देय फीस (Fee): ₹{s_fee}</div>
+            {fee_display_html}
             <form action="/pay-and-submit" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="service_type" value="{s_title}">
                 <input type="hidden" name="amount" value="{s_fee}">
@@ -619,18 +651,9 @@ def service_page(service_name):
                 <label><b>दस्तावेज अपलोड करें (मल्टीपल फाइलें):</b></label>
                 <input type="file" name="files" accept=".pdf,.jpg,.jpeg,.jfif" multiple required>
                 
-                <hr style="border:0; border-top:1px dashed #ddd; margin:15px 0;">
+                {payment_section_html}
                 
-                <div style="text-align:center;">
-                    <p style="margin:5px 0; font-size:13px; font-weight:bold; color:#555;">नीचे दिए गए QR कोड को स्कैन करके ₹{s_fee} भुगतान करें:</p>
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=upi://pay?pa={OWNER_UPI_ID}&pn={OWNER_NAME}&am={s_fee}&cu=INR" alt="UPI QR Code" style="border:1px solid #ddd; padding:5px; border-radius:5px; background:white;">
-                    <p style="font-size:12px; color:#666; margin:5px 0;">UPI ID: <b>{OWNER_UPI_ID}</b></p>
-                </div>
-                
-                <label><b>UPI ट्रांजैक्शन / UTR नंबर दर्ज करें:</b></label>
-                <input type="text" name="utr_number" placeholder="जैसे: 4321xxxxxxxx" required style="background:#fffde7; font-weight:bold;">
-                
-                <button type="submit">🚀 भुगतान सत्यापित करें व फॉर्म जमा करें</button>
+                <button type="submit">{submit_btn_text}</button>
             </form>
             <a href="/" style="display:block; text-align:center; margin-top:10px; color:#007BFF; text-decoration:none;">⬅️ होम पेज पर जाएं</a>
         </div>
@@ -648,7 +671,9 @@ def submit_service():
         cust_mobile = request.form.get('cust_mobile', 'लागू नहीं')
         cust_email = request.form.get('cust_email', 'लागू नहीं')
         extra_info = request.form.get('extra_info', '')
-        utr_number = request.form.get('utr_number', 'Direct / N/A')
+        utr_number = request.form.get('utr_number', 'FREE / NA')
+        if not utr_number.strip():
+            utr_number = 'FREE / NA'
         
         uploaded_files = []
         files = request.files.getlist('files')
@@ -733,7 +758,13 @@ def add_service():
     if session.get('logged_in'):
         title = request.form.get('title')
         service_name = request.form.get('service_name')
-        fee = int(request.form.get('fee', 0))
+        
+        fee_raw = request.form.get('fee', '0')
+        try:
+            fee = int(fee_raw) if fee_raw and fee_raw.strip() != '' else 0
+        except ValueError:
+            fee = 0
+
         emoji = request.form.get('emoji', '📄')
         note = request.form.get('note', '')
         extra_label = request.form.get('extra_label', 'आवश्यक जानकारी')
@@ -780,7 +811,13 @@ def edit_service(card_id):
     if request.method == 'POST':
         target_card['title'] = request.form.get('title')
         target_card['service_name'] = request.form.get('service_name')
-        target_card['fee'] = int(request.form.get('fee', 0))
+        
+        fee_raw = request.form.get('fee', '0')
+        try:
+            target_card['fee'] = int(fee_raw) if fee_raw and fee_raw.strip() != '' else 0
+        except ValueError:
+            target_card['fee'] = 0
+
         target_card['emoji'] = request.form.get('emoji', '📄')
         target_card['note'] = request.form.get('note', '')
         target_card['extra_label'] = request.form.get('extra_label', 'आवश्यक जानकारी')
